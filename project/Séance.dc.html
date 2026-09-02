@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"><style>:root{--page-bg:#0f0f0c;--bg:#191812;--surface:#23221b;--surface-2:#2b2a22;--surface-3:#2e2d24;--field:#1d1c16;--field-deep:#191812;--line:#2f2e24;--line-2:#3a3930;--line-3:#363528;--dash:#3f3e33;--fg:#f1efe4;--fg-2:#e4e1d4;--fg-3:#c9c6b8;--muted:#a3a094;--muted-2:#8d8b80;--muted-3:#7d7b70;--accent:#5aa06b;--accent-hover:#69b079;--on-accent:#11200e;--accent-fg:#8fc79c;--accent-soft:rgba(90,160,107,0.13);--accent-soft-line:rgba(90,160,107,0.3);--accent-chip:rgba(90,160,107,0.16);--accent-faint:rgba(90,160,107,0.1);--danger:#c9705f;--danger-soft:#3a2b26;--scrim:rgba(8,8,6,0.62);--bg-0:rgba(25,24,18,0)}
+:root[data-theme=light],body[data-theme=light]{--page-bg:#dedbcb;--bg:#f4f2e7;--surface:#ffffff;--surface-2:#eae7d9;--surface-3:#e2dfcf;--field:#f7f5ec;--field-deep:#eae7d9;--line:#e5e2d2;--line-2:#d5d2c0;--line-3:#dcd9c7;--dash:#c6c2ae;--fg:#24231b;--fg-2:#34332a;--fg-3:#4c4a40;--muted:#6f6d61;--muted-2:#7d7a6b;--muted-3:#95917f;--accent:#3d7d50;--accent-hover:#336943;--on-accent:#ffffff;--accent-fg:#2f6b41;--accent-soft:rgba(61,125,80,0.1);--accent-soft-line:rgba(61,125,80,0.26);--accent-chip:rgba(61,125,80,0.14);--accent-faint:rgba(61,125,80,0.07);--danger:#a8452f;--danger-soft:#f3ded7;--scrim:rgba(36,35,27,0.38);--bg-0:rgba(244,242,231,0)}
+body{margin:0;background:var(--page-bg);font-family:'Space Grotesk',system-ui,sans-serif}a{color:var(--accent)}a:hover{color:var(--accent-hover)}input{font-family:inherit}input:focus{outline:none}*{-webkit-tap-highlight-color:transparent}</style></helmet>
+<div style="min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:36px 20px 60px;box-sizing:border-box">
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" dark="{{ isDark }}" hint-size="428px,908px">
+
+<div ref="{{ rootRef }}" style="height:100%;position:relative;overflow:hidden;display:flex;flex-direction:column;background:var(--bg);color:var(--fg)">
+
+<div style="padding:14px 20px 12px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px">
+<div style="display:flex;flex-direction:column;gap:3px">
+<div style="font-size:26px;font-weight:600;letter-spacing:-0.02em">Séance en cours</div>
+<div style="font-size:12px;color:var(--muted)">Aller‑retour · demi‑tour à mi‑parcours</div>
+</div>
+<div style="display:flex;gap:8px">
+<div style="width:34px;height:34px;border-radius:17px;border:1px solid var(--line-3);display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--muted);cursor:pointer" onClick="{{ openSettingsSheet }}" title="Paramètres">⚙</div>
+<div style="width:34px;height:34px;border-radius:17px;border:1px solid var(--line-3);display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--muted);cursor:pointer" onClick="{{ resetSession }}" title="Vider la séance">↺</div>
+</div>
+</div>
+
+<div style="margin:0 16px;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:16px 16px 14px;display:flex;flex-direction:column;gap:14px">
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="font-size:10px;letter-spacing:0.12em;color:var(--muted);text-transform:uppercase">Distance ({{ distUnitLabel }})</div>
+<div style="font-size:21px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;white-space:nowrap">{{ totalDistText }}</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:4px">
+<div style="font-size:10px;letter-spacing:0.12em;color:var(--muted);text-transform:uppercase">Durée (min)</div>
+<div style="font-size:21px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;white-space:nowrap">{{ totalDurText }}</div>
+</div>
+</div>
+
+<div style="background:var(--accent-soft);border:1px solid var(--accent-soft-line);border-radius:15px;padding:13px 14px;display:flex;align-items:center;gap:13px">
+<div style="width:38px;height:38px;flex:none;border-radius:19px;background:var(--accent);color:var(--on-accent);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;line-height:1">↩</div>
+<div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+<div style="font-size:10px;letter-spacing:0.14em;color:var(--accent-fg);text-transform:uppercase;font-weight:600">Demi‑tour</div>
+<div style="font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-0.01em;color:var(--fg)">{{ turnMain }}</div>
+<div style="font-size:12px;color:var(--muted);text-wrap:pretty">{{ turnSub }}</div>
+</div>
+</div>
+</div>
+
+<div style="padding:18px 20px 8px;display:flex;align-items:baseline;justify-content:space-between">
+<div style="font-size:13px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)">Étapes</div>
+<div style="font-size:12px;color:var(--muted-2);font-variant-numeric:tabular-nums">{{ stepCountText }}</div>
+</div>
+
+<div style="flex:1;overflow-y:auto;padding:0 16px 96px;display:flex;flex-direction:column;gap:10px">
+<sc-for list="{{ rows }}" as="row" hint-placeholder-count="3">
+<div style="background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:13px 14px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:flex-start;gap:10px">
+<div style="width:22px;height:22px;flex:none;margin-top:1px;border-radius:7px;background:var(--surface-3);color:var(--muted);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums">{{ row.num }}</div>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;cursor:pointer" onClick="{{ row.onEdit }}">
+<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+<div style="font-size:16px;font-weight:600;letter-spacing:-0.01em">{{ row.name }}</div>
+<sc-if value="{{ row.showReps }}" hint-placeholder-val="{{ false }}"><div style="font-size:11px;font-weight:600;padding:2px 7px;border-radius:6px;background:var(--accent-chip);color:var(--accent-fg);font-variant-numeric:tabular-nums">{{ row.repsText }}</div></sc-if>
+</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<div style="font-size:13px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;padding:4px 9px;border-radius:8px;background:var(--surface-2);color:var(--fg-2)">{{ row.paceText }}</div>
+<div style="font-size:13px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;padding:4px 9px;border-radius:8px;background:var(--surface-2);color:var(--fg-2)">{{ row.measureText }}</div>
+<sc-if value="{{ row.showRec }}" hint-placeholder-val="{{ false }}"><div style="font-size:13px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;padding:4px 9px;border-radius:8px;background:transparent;border:1px dashed var(--dash);color:var(--muted)">{{ row.recText }}</div></sc-if>
+</div>
+<div style="font-size:12px;color:var(--muted-2);font-variant-numeric:tabular-nums">{{ row.totalsText }}</div>
+</div>
+<div style="width:26px;height:26px;flex:none;border-radius:13px;display:flex;align-items:center;justify-content:center;color:var(--muted-3);font-size:16px;cursor:pointer" style-hover="color:var(--danger);background:var(--surface-3)" onClick="{{ row.onDelete }}">×</div>
+</div>
+<sc-if value="{{ row.marker }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:11px;background:var(--accent-faint);border-left:3px solid var(--accent)">
+<div style="font-size:14px;color:var(--accent);line-height:1">↩</div>
+<div style="font-size:11.5px;color:var(--accent-fg);line-height:1.4;text-wrap:pretty">{{ row.markerText }}</div>
+</div>
+</sc-if>
+</div>
+</sc-for>
+
+<sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+<div style="border:1px dashed var(--line-2);border-radius:16px;padding:26px 18px;text-align:center;color:var(--muted-2);font-size:13px;line-height:1.5">Aucune étape.<br>Ajoutez‑en une pour calculer le demi‑tour.</div>
+</sc-if>
+</div>
+
+<div style="position:absolute;left:0;right:0;bottom:0;padding:14px 16px 16px;background:linear-gradient(to top,var(--bg) 55%,var(--bg-0))">
+<div onClick="{{ openStepSheet }}" style="height:52px;border-radius:16px;background:var(--accent);color:var(--on-accent);font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:9px;cursor:pointer" style-hover="background:var(--accent-hover)"><span style="font-size:20px;font-weight:400;line-height:1">+</span>Ajouter une étape</div>
+</div>
+
+<sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;inset:0;background:var(--scrim)" onClick="{{ closeSheet }}"></div>
+<div ref="{{ sheetRef }}" onKeyDown="{{ onSheetKey }}" style="position:absolute;left:0;right:0;bottom:0;max-height:92%;overflow-y:auto;background:var(--surface);border-top:1px solid var(--line-3);border-radius:24px 24px 0 0;padding:10px 16px 18px;display:flex;flex-direction:column;gap:16px">
+<div style="width:34px;height:4px;border-radius:2px;background:var(--line-2);align-self:center"></div>
+
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+<div style="font-size:19px;font-weight:600;letter-spacing:-0.01em">{{ sheetTitle }}</div>
+<div onClick="{{ closeSheet }}" style="width:30px;height:30px;border-radius:15px;background:var(--surface-2);color:var(--muted);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer">×</div>
+</div>
+
+<sc-if value="{{ showTemplatePicker }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)">Modèle</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<sc-for list="{{ templateChips }}" as="tpl" hint-placeholder-count="2">
+<div onClick="{{ tpl.onPick }}" style="font-size:13px;padding:8px 12px;border-radius:10px;background:{{ tpl.bg }};border:1px solid {{ tpl.border }};color:var(--fg-2);cursor:pointer;display:flex;align-items:center;gap:8px">{{ tpl.name }}<span style="font-size:11px;color:var(--muted-2);font-family:ui-monospace,Menlo,monospace">{{ tpl.hint }}</span></div>
+</sc-for>
+<div onClick="{{ openTemplateSheet }}" style="font-size:13px;padding:8px 12px;border-radius:10px;border:1px dashed var(--dash);color:var(--muted);cursor:pointer">+ Nouveau modèle</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isTemplateMode }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)">Nom du modèle</div>
+<input data-field="templateName" value="{{ draft.templateName }}" onChange="{{ onField }}" placeholder="Fractionné 400 m" style="height:48px;border-radius:12px;border:1px solid var(--line-2);background:var(--field);color:var(--fg);font-size:16px;padding:0 14px;box-sizing:border-box;width:100%">
+<div style="font-size:12px;color:var(--danger)">{{ errors.templateName }}</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isEditor }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;flex-direction:column;gap:9px">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+<div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)">Longueur <span style="text-transform:none;letter-spacing:0;color:var(--muted-3)">{{ optionalNote }}</span></div>
+<div style="display:flex;background:var(--field);border:1px solid var(--line);border-radius:9px;padding:2px;gap:2px">
+<div onClick="{{ setMeasureDistance }}" style="font-size:12px;padding:5px 10px;border-radius:7px;cursor:pointer;background:{{ distBg }};color:{{ distFg }}">{{ distToggleLabel }}</div>
+<div onClick="{{ setMeasureDuration }}" style="font-size:12px;padding:5px 10px;border-radius:7px;cursor:pointer;background:{{ durBg }};color:{{ durFg }}">Durée</div>
+</div>
+</div>
+<div style="display:flex;align-items:center;gap:8px;height:52px;border-radius:12px;border:1px solid var(--line-2);background:var(--field);padding:0 12px">
+<input data-field="value" value="{{ draft.value }}" onChange="{{ onField }}" inputMode="decimal" placeholder="{{ valuePlaceholder }}" style="flex:1;min-width:0;border:none;background:none;color:var(--fg);font-size:21px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums;padding:0">
+<div style="font-size:12px;color:var(--muted-2);white-space:nowrap">{{ valueSuffix }}</div>
+</div>
+<div style="font-size:12px;color:var(--danger)">{{ errors.value }}</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:9px">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+<div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)">Allure cible <span style="text-transform:none;letter-spacing:0;color:var(--muted-3)">{{ optionalNote }}</span></div>
+<div style="display:flex;background:var(--field);border:1px solid var(--line);border-radius:9px;padding:2px;gap:2px">
+<div onClick="{{ setPaceSingle }}" style="font-size:12px;padding:5px 10px;border-radius:7px;cursor:pointer;background:{{ paceSingleBg }};color:{{ paceSingleFg }}">Unique</div>
+<div onClick="{{ setPaceRange }}" style="font-size:12px;padding:5px 10px;border-radius:7px;cursor:pointer;background:{{ paceRangeBg }};color:{{ paceRangeFg }}">Intervalle</div>
+</div>
+</div>
+<div style="display:flex;align-items:center;gap:10px">
+<div style="flex:1;display:flex;align-items:center;gap:8px;height:52px;border-radius:12px;border:1px solid var(--line-2);background:var(--field);padding:0 12px">
+<input data-field="pace" value="{{ draft.pace }}" onChange="{{ onField }}" inputMode="decimal" placeholder="4.30" style="flex:1;min-width:0;width:100%;border:none;background:none;color:var(--fg);font-size:21px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums;padding:0">
+</div>
+<sc-if value="{{ isPaceRange }}" hint-placeholder-val="{{ false }}">
+<div style="color:var(--muted-2);font-size:14px">à</div>
+<div style="flex:1;min-width:0;display:flex;align-items:center;height:52px;border-radius:12px;border:1px solid var(--line-2);background:var(--field);padding:0 12px">
+<input data-field="paceMax" value="{{ draft.paceMax }}" onChange="{{ onField }}" inputMode="decimal" placeholder="4.45" style="flex:1;min-width:0;width:100%;border:none;background:none;color:var(--fg);font-size:21px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums;padding:0">
+</div>
+</sc-if>
+<div style="font-size:12.5px;color:var(--muted-2);white-space:nowrap">{{ paceSuffix }}</div>
+</div>
+<div style="font-size:12px;color:var(--danger)">{{ paceError }}</div>
+</div>
+
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+<div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)">Répétitions</div>
+<div style="display:flex;align-items:center;gap:6px">
+<div onClick="{{ repsDown }}" style="width:40px;height:40px;border-radius:11px;background:var(--surface-2);color:var(--fg-2);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;user-select:none">−</div>
+<input data-field="reps" value="{{ draft.reps }}" onChange="{{ onField }}" inputMode="numeric" style="width:56px;height:40px;border-radius:11px;border:1px solid var(--line-2);background:var(--field);color:var(--fg);font-size:17px;text-align:center;font-variant-numeric:tabular-nums;box-sizing:border-box">
+<div onClick="{{ repsUp }}" style="width:40px;height:40px;border-radius:11px;background:var(--surface-2);color:var(--fg-2);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;user-select:none">+</div>
+</div>
+</div>
+
+<div style="font-size:12px;color:var(--danger);margin-top:-8px">{{ errors.reps }}</div>
+
+<div style="height:1px;background:var(--line)"></div>
+
+<div style="display:flex;flex-direction:column;gap:12px">
+<div onClick="{{ toggleRecovery }}" style="display:flex;align-items:center;gap:10px;cursor:pointer">
+<div style="width:20px;height:20px;border-radius:6px;border:1px solid var(--line-2);background:{{ recBg }};color:var(--on-accent);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">{{ recMark }}</div>
+<div style="font-size:13.5px;color:var(--fg-3)">Récupération après chaque répétition</div>
+</div>
+
+<sc-if value="{{ recOn }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:12px;padding:13px;border-radius:14px;background:var(--field);border:1px solid var(--line)">
+<div style="display:flex;align-items:center;gap:10px">
+<div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);flex:1">Durée</div>
+<div style="display:flex;align-items:center;gap:8px;width:150px;height:46px;border-radius:11px;border:1px solid var(--line-2);background:var(--field-deep);padding:0 12px">
+<input data-field="recDur" value="{{ draft.recDur }}" onChange="{{ onField }}" inputMode="decimal" placeholder="2.00" style="flex:1;min-width:0;border:none;background:none;color:var(--fg);font-size:19px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums;padding:0">
+<div style="font-size:12px;color:var(--muted-2)">mm.ss</div>
+</div>
+</div>
+<div style="font-size:12px;color:var(--danger)">{{ errors.recDur }}</div>
+
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+<div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)">Allure de récup.</div>
+<div style="display:flex;background:var(--field-deep);border:1px solid var(--line);border-radius:9px;padding:2px;gap:2px">
+<div onClick="{{ setRecSingle }}" style="font-size:12px;padding:5px 10px;border-radius:7px;cursor:pointer;background:{{ recSingleBg }};color:{{ recSingleFg }}">Unique</div>
+<div onClick="{{ setRecRange }}" style="font-size:12px;padding:5px 10px;border-radius:7px;cursor:pointer;background:{{ recRangeBg }};color:{{ recRangeFg }}">Intervalle</div>
+</div>
+</div>
+<div style="display:flex;align-items:center;gap:10px">
+<div style="flex:1;min-width:0;display:flex;align-items:center;height:46px;border-radius:11px;border:1px solid var(--line-2);background:var(--field-deep);padding:0 12px">
+<input data-field="recPace" value="{{ draft.recPace }}" onChange="{{ onField }}" inputMode="decimal" placeholder="9.00" style="flex:1;min-width:0;width:100%;border:none;background:none;color:var(--fg);font-size:19px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums;padding:0">
+</div>
+<sc-if value="{{ isRecRange }}" hint-placeholder-val="{{ false }}">
+<div style="color:var(--muted-2);font-size:14px">à</div>
+<div style="flex:1;min-width:0;display:flex;align-items:center;height:46px;border-radius:11px;border:1px solid var(--line-2);background:var(--field-deep);padding:0 12px">
+<input data-field="recPaceMax" value="{{ draft.recPaceMax }}" onChange="{{ onField }}" inputMode="decimal" placeholder="11.00" style="flex:1;min-width:0;width:100%;border:none;background:none;color:var(--fg);font-size:19px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums;padding:0">
+</div>
+</sc-if>
+<div style="font-size:12.5px;color:var(--muted-2);white-space:nowrap">{{ paceSuffix }}</div>
+</div>
+<div style="font-size:12px;color:var(--danger)">{{ recPaceError }}</div>
+</div>
+</sc-if>
+</div>
+
+<div style="height:1px;background:var(--line)"></div>
+
+<div style="font-size:12.5px;color:var(--muted-2);line-height:1.5;font-variant-numeric:tabular-nums">{{ previewLine }}</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)">Thème</div>
+<div style="display:flex;background:var(--field);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px">
+<div onClick="{{ setThemeSystem }}" style="flex:1;text-align:center;font-size:13px;padding:10px 0;border-radius:9px;cursor:pointer;background:{{ thSysBg }};color:{{ thSysFg }}">Système</div>
+<div onClick="{{ setThemeLight }}" style="flex:1;text-align:center;font-size:13px;padding:10px 0;border-radius:9px;cursor:pointer;background:{{ thLightBg }};color:{{ thLightFg }}">Clair</div>
+<div onClick="{{ setThemeDark }}" style="flex:1;text-align:center;font-size:13px;padding:10px 0;border-radius:9px;cursor:pointer;background:{{ thDarkBg }};color:{{ thDarkFg }}">Sombre</div>
+</div>
+<div style="font-size:12px;color:var(--muted-2);line-height:1.5">{{ themeNote }}</div>
+</div>
+
+<div style="height:1px;background:var(--line);margin:4px 0"></div>
+
+<div style="font-size:12.5px;color:var(--muted-2);line-height:1.5">Allure de récupération proposée par défaut à chaque nouvelle étape.</div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+<div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)">Allure de récup.</div>
+<div style="display:flex;background:var(--field);border:1px solid var(--line);border-radius:9px;padding:2px;gap:2px">
+<div onClick="{{ setRecSingle }}" style="font-size:12px;padding:5px 10px;border-radius:7px;cursor:pointer;background:{{ recSingleBg }};color:{{ recSingleFg }}">Unique</div>
+<div onClick="{{ setRecRange }}" style="font-size:12px;padding:5px 10px;border-radius:7px;cursor:pointer;background:{{ recRangeBg }};color:{{ recRangeFg }}">Intervalle</div>
+</div>
+</div>
+<div style="display:flex;align-items:center;gap:10px">
+<div style="flex:1;min-width:0;display:flex;align-items:center;height:52px;border-radius:12px;border:1px solid var(--line-2);background:var(--field);padding:0 12px">
+<input data-field="recPace" value="{{ draft.recPace }}" onChange="{{ onField }}" inputMode="decimal" placeholder="9.00" style="flex:1;min-width:0;width:100%;border:none;background:none;color:var(--fg);font-size:21px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums;padding:0">
+</div>
+<sc-if value="{{ isRecRange }}" hint-placeholder-val="{{ false }}">
+<div style="color:var(--muted-2);font-size:14px">à</div>
+<div style="flex:1;min-width:0;display:flex;align-items:center;height:52px;border-radius:12px;border:1px solid var(--line-2);background:var(--field);padding:0 12px">
+<input data-field="recPaceMax" value="{{ draft.recPaceMax }}" onChange="{{ onField }}" inputMode="decimal" placeholder="11.00" style="flex:1;min-width:0;width:100%;border:none;background:none;color:var(--fg);font-size:21px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums;padding:0">
+</div>
+</sc-if>
+<div style="font-size:12.5px;color:var(--muted-2);white-space:nowrap">{{ paceSuffix }}</div>
+</div>
+<div style="font-size:12px;color:var(--danger)">{{ recPaceError }}</div>
+
+<div style="height:1px;background:var(--line);margin:4px 0"></div>
+
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)">Modèles</div>
+<sc-for list="{{ tplRows }}" as="tpl" hint-placeholder-count="2">
+<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:var(--field);border:1px solid var(--line)">
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+<div style="font-size:14.5px;font-weight:600">{{ tpl.name }}</div>
+<div style="font-size:12px;color:var(--muted-2);font-family:ui-monospace,SFMono-Regular,Menlo,monospace">{{ tpl.detail }}</div>
+</div>
+<div onClick="{{ tpl.onEdit }}" style="width:34px;height:34px;flex:none;border-radius:10px;background:var(--surface-2);color:var(--fg-3);display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer" style-hover="background:var(--surface-3)">✎</div>
+<div onClick="{{ tpl.onDelete }}" style="width:34px;height:34px;flex:none;border-radius:10px;background:var(--surface-2);color:var(--danger);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer" style-hover="background:var(--danger-soft)">×</div>
+</div>
+</sc-for>
+<sc-if value="{{ noTemplates }}" hint-placeholder-val="{{ false }}">
+<div style="font-size:12.5px;color:var(--muted-2);line-height:1.5">Aucun modèle enregistré.</div>
+</sc-if>
+<div onClick="{{ openTemplateSheet }}" style="font-size:13px;padding:10px 12px;border-radius:12px;border:1px dashed var(--dash);color:var(--muted);cursor:pointer;text-align:center">+ Nouveau modèle</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isStepMode }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:10px">
+<div onClick="{{ toggleSaveTemplate }}" style="display:flex;align-items:center;gap:10px;cursor:pointer">
+<div style="width:20px;height:20px;border-radius:6px;border:1px solid var(--line-2);background:{{ saveTplBg }};color:var(--on-accent);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700">{{ saveTplMark }}</div>
+<div style="font-size:13.5px;color:var(--fg-3)">Enregistrer comme modèle</div>
+</div>
+<sc-if value="{{ draft.saveTemplate }}" hint-placeholder-val="{{ false }}">
+<input data-field="templateName" value="{{ draft.templateName }}" onChange="{{ onField }}" placeholder="Nom du modèle" style="height:46px;border-radius:12px;border:1px solid var(--line-2);background:var(--field);color:var(--fg);font-size:15px;padding:0 14px;box-sizing:border-box;width:100%">
+</sc-if>
+</div>
+</sc-if>
+
+<div style="display:flex;gap:10px">
+<div onClick="{{ closeSheet }}" style="flex:1;height:50px;border-radius:14px;border:1px solid var(--line-2);color:var(--fg-3);font-size:15px;display:flex;align-items:center;justify-content:center;cursor:pointer">Annuler</div>
+<div onClick="{{ submitSheet }}" style="flex:1.6;height:50px;border-radius:14px;background:var(--accent);color:var(--on-accent);font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer" style-hover="background:var(--accent-hover)">{{ submitLabel }}</div>
+</div>
+
+<sc-if value="{{ hintsOn }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center">
+<div style="font-size:11px;color:var(--muted-3);background:var(--field);border:1px solid var(--line);border-radius:7px;padding:4px 8px">Tab / ⏎ champ suivant</div>
+<div style="font-size:11px;color:var(--muted-3);background:var(--field);border:1px solid var(--line);border-radius:7px;padding:4px 8px">Ctrl+⏎ valider</div>
+<div style="font-size:11px;color:var(--muted-3);background:var(--field);border:1px solid var(--line);border-radius:7px;padding:4px 8px">Échap fermer</div>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+</div>
+</x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:468,&quot;height&quot;:948},&quot;defaultTheme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;système&quot;,&quot;clair&quot;,&quot;sombre&quot;],&quot;default&quot;:&quot;système&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Réglages&quot;},&quot;unit&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;min/km&quot;,&quot;min/mile&quot;],&quot;default&quot;:&quot;min/km&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Réglages&quot;},&quot;halfBy&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;distance&quot;,&quot;durée&quot;],&quot;default&quot;:&quot;distance&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Réglages&quot;},&quot;showHints&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Réglages&quot;}}">
+class Component extends DCLogic {
+  state = {
+    templates: [
+      { id: 't1', name: 'Échauffement', paceMode: 'single', pace: '6.00', paceMax: '', measure: 'duration', value: '10.00', reps: 1 },
+      { id: 't2', name: 'Retour au calme', paceMode: 'single', pace: '6.30', paceMax: '', measure: 'duration', value: '8.00', reps: 1 },
+    ],
+    steps: [
+      { id: 's1', name: 'Échauffement', paceMode: 'single', pace: '6.00', paceMax: '', measure: 'duration', value: '10.00', reps: 1 },
+      { id: 's2', name: '', paceMode: 'range', pace: '4.30', paceMax: '4.45', measure: 'distance', value: '1', reps: 4 },
+      { id: 's3', name: 'Retour au calme', paceMode: 'single', pace: '6.30', paceMax: '', measure: 'duration', value: '8.00', reps: 1 },
+    ],
+    settings: { recPaceMode: 'range', recPace: '9.00', recPaceMax: '11.00' },
+    sheet: null,
+    draft: null,
+    errors: {},
+    editingId: null,
+    theme: null,
+    sysDark: (typeof window !== 'undefined' && window.matchMedia) ? window.matchMedia('(prefers-color-scheme: dark)').matches : true,
+  };
+
+  // ── theme ─────────────────────────────────────────────────────
+  themeChoice() {
+    if (this.state.theme) return this.state.theme;
+    const p = this.props.defaultTheme;
+    return p === 'clair' ? 'light' : p === 'sombre' ? 'dark' : 'system';
+  }
+
+  resolvedTheme() {
+    const c = this.themeChoice();
+    return c === 'system' ? (this.state.sysDark ? 'dark' : 'light') : c;
+  }
+
+  applyTheme() {
+    const t = this.resolvedTheme();
+    if (document.body) document.body.setAttribute('data-theme', t);
+    if (document.documentElement) document.documentElement.setAttribute('data-theme', t);
+  }
+
+  componentDidMount() {
+    if (window.matchMedia) {
+      this.mq = window.matchMedia('(prefers-color-scheme: dark)');
+      this.onMq = (e) => this.setState({ sysDark: e.matches });
+      if (this.mq.addEventListener) this.mq.addEventListener('change', this.onMq);
+      else if (this.mq.addListener) this.mq.addListener(this.onMq);
+    }
+    this.applyTheme();
+  }
+
+  componentDidUpdate() { this.applyTheme(); }
+
+  componentWillUnmount() {
+    if (!this.mq) return;
+    if (this.mq.removeEventListener) this.mq.removeEventListener('change', this.onMq);
+    else if (this.mq.removeListener) this.mq.removeListener(this.onMq);
+  }
+
+  // ── parsing / formatting ──────────────────────────────────────
+  pad2(n) { return String(n).padStart(2, '0'); }
+
+  parseMMSS(raw) {
+    const s = String(raw == null ? '' : raw).trim().replace(',', '.');
+    if (!s) return { err: 'Requis' };
+    if (!/^\d{1,3}([.:]\d{1,2})?$/.test(s)) return { err: 'Format attendu : mm.ss' };
+    const p = s.split(/[.:]/);
+    const m = parseInt(p[0], 10);
+    const ss = p[1] === undefined ? 0 : parseInt(p[1], 10);
+    if (ss > 59) return { err: 'Les secondes doivent être inférieures à 60' };
+    const sec = m * 60 + ss;
+    if (sec <= 0) return { err: 'Doit être supérieur à zéro' };
+    return { sec: sec };
+  }
+
+  parseDist(raw) {
+    const s = String(raw == null ? '' : raw).trim().replace(',', '.');
+    if (!s) return { err: 'Requis' };
+    if (!/^\d{1,3}(\.\d{1,3})?$/.test(s)) return { err: 'Nombre attendu, ex. 1,5' };
+    const v = parseFloat(s);
+    if (!(v > 0)) return { err: 'Doit être supérieur à zéro' };
+    return { km: v };
+  }
+
+  fSec(sec) {
+    const t = Math.round(sec);
+    return Math.floor(t / 60) + '.' + this.pad2(t % 60);
+  }
+
+  fDist(km) {
+    return km.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  fRange(a, b, fmt, eps) {
+    return (Math.abs(b - a) < eps) ? fmt(a) : fmt(a) + '–' + fmt(b);
+  }
+
+  unitDist() { return (this.props.unit || 'min/km') === 'min/mile' ? 'mi' : 'km'; }
+  unitPace() { return (this.props.unit || 'min/km') === 'min/mile' ? '/mi' : '/km'; }
+
+  // ── step maths ────────────────────────────────────────────────
+  piece(paceMode, pace, paceMax, measure, value) {
+    const a = this.parseMMSS(pace);
+    if (a.err) return { ok: false };
+    const b = paceMode === 'range' ? this.parseMMSS(paceMax) : a;
+    if (b.err) return { ok: false };
+    const fast = Math.min(a.sec, b.sec), slow = Math.max(a.sec, b.sec);
+    let dMin, dMax, tMin, tMax;
+    if (measure === 'distance') {
+      const d = this.parseDist(value);
+      if (d.err) return { ok: false };
+      dMin = dMax = d.km; tMin = d.km * fast; tMax = d.km * slow;
+    } else {
+      const t = this.parseMMSS(value);
+      if (t.err) return { ok: false };
+      tMin = tMax = t.sec; dMin = t.sec / slow; dMax = t.sec / fast;
+    }
+    return { ok: true, dMin: dMin, dMax: dMax, tMin: tMin, tMax: tMax, dMid: (dMin + dMax) / 2, tMid: (tMin + tMax) / 2 };
+  }
+
+  metrics(st) {
+    const run = this.piece(st.paceMode, st.pace, st.paceMax, st.measure, st.value);
+    if (!run.ok) return { ok: false };
+    const reps = Math.max(1, parseInt(st.reps, 10) || 1);
+    let rec = null;
+    if (st.recovery) {
+      rec = this.piece(st.recPaceMode || 'single', st.recPace, st.recPaceMax, 'duration', st.recDur);
+      if (!rec.ok) return { ok: false };
+    }
+    const z = { dMin: 0, dMax: 0, tMin: 0, tMax: 0 };
+    const r = rec || z;
+    return {
+      ok: true, reps: reps, run: run, rec: rec,
+      dMin: (run.dMin + r.dMin) * reps, dMax: (run.dMax + r.dMax) * reps,
+      tMin: (run.tMin + r.tMin) * reps, tMax: (run.tMax + r.tMax) * reps,
+      dMid: (run.dMid + (rec ? rec.dMid : 0)) * reps, tMid: (run.tMid + (rec ? rec.tMid : 0)) * reps,
+    };
+  }
+
+  autoName(st) {
+    if (st.name) return st.name;
+    const m = this.metrics(st);
+    if (st.measure === 'distance') {
+      const d = this.parseDist(st.value);
+      return d.err ? 'Étape' : this.fDist(d.km).replace(',00', '') + ' ' + this.unitDist();
+    }
+    const t = this.parseMMSS(st.value);
+    return t.err ? 'Étape' : this.fSec(t.sec) + ' min';
+  }
+
+  // ── derived session ───────────────────────────────────────────
+  session() {
+    const steps = this.state.steps;
+    let dMin = 0, dMax = 0, tMin = 0, tMax = 0;
+    const segs = [];
+    steps.forEach((st, i) => {
+      const m = this.metrics(st);
+      if (!m.ok) return;
+      dMin += m.dMin; dMax += m.dMax; tMin += m.tMin; tMax += m.tMax;
+      for (let r = 0; r < m.reps; r++) {
+        segs.push({ i: i, rep: r + 1, reps: m.reps, kind: 'run', d: m.run.dMid, t: m.run.tMid });
+        if (m.rec) segs.push({ i: i, rep: r + 1, reps: m.reps, kind: 'rec', d: m.rec.dMid, t: m.rec.tMid });
+      }
+    });
+    const dMid = (dMin + dMax) / 2, tMid = (tMin + tMax) / 2;
+    const byDist = (this.props.halfBy || 'distance') !== 'durée';
+    const target = (byDist ? dMid : tMid) / 2;
+    let acc = 0, accT = 0, accD = 0, turn = null;
+    for (const s of segs) {
+      const step = byDist ? s.d : s.t;
+      if (acc + step >= target && step > 0) {
+        const f = (target - acc) / step;
+        turn = { i: s.i, rep: s.rep, reps: s.reps, kind: s.kind, dist: accD + f * s.d, time: accT + f * s.t, intoD: f * s.d, intoT: f * s.t };
+        break;
+      }
+      acc += step; accT += s.t; accD += s.d;
+    }
+    return { dMin: dMin, dMax: dMax, tMin: tMin, tMax: tMax, dMid: dMid, tMid: tMid, turn: turn, segs: segs };
+  }
+
+  // ── sheet handling ────────────────────────────────────────────
+  blank() {
+    const s = this.state.settings;
+    return { paceMode: 'single', pace: '', paceMax: '', measure: 'duration', value: '', reps: 1, recovery: false, recDur: '', recPaceMode: s.recPaceMode, recPace: s.recPace, recPaceMax: s.recPaceMax, saveTemplate: false, templateName: '', name: '' };
+  }
+
+  openStep = () => this.setState({ sheet: 'step', editingId: null, errors: {}, draft: this.blank() });
+
+  openTemplate = (t) => {
+    const ret = this.state.sheet === 'settings' ? 'settings' : 'step';
+    const d = t
+      ? Object.assign(this.blank(), t, { templateName: t.name, saveTemplate: false })
+      : Object.assign(this.blank(), { measure: 'duration' });
+    this.setState({ sheet: 'template', editingId: null, editingTplId: t ? t.id : null, tplReturn: ret, errors: {}, draft: d });
+  };
+
+  deleteTemplate(id) {
+    this.setState({ templates: this.state.templates.filter(t => t.id !== id) });
+  }
+
+  editStep(st) {
+    const d = Object.assign(this.blank(), st, { saveTemplate: false, templateName: '' });
+    if (!String(d.recPace).trim()) {
+      const s = this.state.settings;
+      d.recPaceMode = s.recPaceMode; d.recPace = s.recPace; d.recPaceMax = s.recPaceMax;
+    }
+    this.setState({ sheet: 'step', editingId: st.id, errors: {}, draft: d });
+  }
+
+  openSettings = () => this.setState({
+    sheet: 'settings', editingId: null, errors: {},
+    draft: Object.assign(this.blank(), this.state.settings),
+  });
+
+  close = () => this.setState({ sheet: null, draft: null, errors: {} });
+
+  setDraft(k, v) {
+    const e = Object.assign({}, this.state.errors); delete e[k];
+    this.setState({ draft: Object.assign({}, this.state.draft, k === '*' ? v : { [k]: v }), errors: e });
+  }
+
+  fieldOrder() {
+    const d = this.state.draft || {};
+    const f = [];
+    if (this.state.sheet === 'settings') {
+      f.push('recPace');
+      if (d.recPaceMode === 'range') f.push('recPaceMax');
+      return f;
+    }
+    if (this.state.sheet === 'template') f.push('templateName');
+    f.push('value', 'pace');
+    if (d.paceMode === 'range') f.push('paceMax');
+    f.push('reps');
+    if (d.recovery) {
+      f.push('recDur', 'recPace');
+      if (d.recPaceMode === 'range') f.push('recPaceMax');
+    }
+    if (this.state.sheet === 'step' && d.saveTemplate) f.push('templateName');
+    return f;
+  }
+
+  setSheetEl = (el) => {
+    this.sheetEl = el;
+    if (el && !this._focused) {
+      this._focused = true;
+      setTimeout(() => this.focusField(this.fieldOrder()[0], true), 30);
+    }
+    if (!el) this._focused = false;
+  };
+
+  focusField(name, select) {
+    if (!this.sheetEl) return;
+    const el = this.sheetEl.querySelector('[data-field="' + name + '"]');
+    if (!el) return;
+    el.focus();
+    if (select && el.select) el.select();
+  }
+
+  onKey = (e) => {
+    if (e.key === 'Escape') { e.preventDefault(); this.close(); return; }
+    if (e.key !== 'Enter') return;
+    if (e.ctrlKey || e.metaKey) { e.preventDefault(); this.submit(); return; }
+    if (!e.target || e.target.tagName !== 'INPUT') return;
+    e.preventDefault();
+    const order = this.fieldOrder();
+    const i = order.indexOf(e.target.getAttribute('data-field'));
+    if (i === -1 || i === order.length - 1) this.submit();
+    else this.focusField(order[i + 1], true);
+  };
+
+  validate() {
+    const d = this.state.draft, errs = {};
+    if (this.state.sheet === 'settings') {
+      const a = this.parseMMSS(d.recPace);
+      if (a.err) errs.recPace = a.err;
+      if (d.recPaceMode === 'range') {
+        const b = this.parseMMSS(d.recPaceMax);
+        if (b.err) errs.recPace = errs.recPace || b.err;
+      }
+      return errs;
+    }
+    const tpl = this.state.sheet === 'template';
+    const hasPace = !!String(d.pace).trim();
+    const hasValue = !!String(d.value).trim();
+
+    if (tpl && !hasPace && !hasValue) {
+      errs.pace = 'Renseignez au moins l’allure ou la longueur';
+    } else {
+      if (hasPace || !tpl) {
+        const a = this.parseMMSS(d.pace);
+        if (a.err) errs.pace = a.err;
+        if (d.paceMode === 'range') {
+          const b = this.parseMMSS(d.paceMax);
+          if (b.err) errs.paceMax = b.err;
+        }
+      }
+      if (hasValue || !tpl) {
+        const v = d.measure === 'distance' ? this.parseDist(d.value) : this.parseMMSS(d.value);
+        if (v.err) errs.value = v.err;
+      }
+    }
+    const r = parseInt(d.reps, 10);
+    if (!(r >= 1)) errs.reps = 'Répétitions invalides';
+    if (d.recovery) {
+      const rd = this.parseMMSS(d.recDur);
+      if (rd.err) errs.recDur = rd.err;
+      const rp = this.parseMMSS(d.recPace);
+      if (rp.err) errs.recPace = rp.err;
+      if (d.recPaceMode === 'range') {
+        const rpb = this.parseMMSS(d.recPaceMax);
+        if (rpb.err) errs.recPace = errs.recPace || rpb.err;
+      }
+    }
+    if ((tpl || d.saveTemplate) && !String(d.templateName).trim()) errs.templateName = 'Donnez un nom au modèle';
+    return errs;
+  }
+
+  submit = () => {
+    const errs = this.validate();
+    if (Object.keys(errs).length) { this.setState({ errors: errs }); return; }
+    const d = this.state.draft;
+    if (this.state.sheet === 'settings') {
+      this.setState({
+        settings: { recPaceMode: d.recPaceMode, recPace: d.recPace, recPaceMax: d.recPaceMode === 'range' ? d.recPaceMax : '' },
+        sheet: null, draft: null, errors: {},
+      });
+      return;
+    }
+    const base = {
+      paceMode: d.paceMode, pace: d.pace, paceMax: d.paceMode === 'range' ? d.paceMax : '',
+      measure: d.measure, value: d.value, reps: Math.max(1, parseInt(d.reps, 10) || 1),
+      recovery: !!d.recovery, recDur: d.recovery ? d.recDur : '',
+      recPaceMode: d.recPaceMode, recPace: d.recovery ? d.recPace : '', recPaceMax: d.recPaceMode === 'range' ? d.recPaceMax : '',
+    };
+    if (this.state.sheet === 'template') {
+      const name = String(d.templateName).trim();
+      const tpl = Object.assign({ id: this.state.editingTplId || ('tpl' + Date.now()), name: name }, base);
+      const templates = this.state.editingTplId
+        ? this.state.templates.map(t => t.id === tpl.id ? tpl : t)
+        : this.state.templates.concat([tpl]);
+      if (this.state.tplReturn === 'settings') {
+        this.setState({
+          templates: templates, sheet: 'settings', editingTplId: null, errors: {},
+          draft: Object.assign(this.blank(), this.state.settings),
+        });
+      } else {
+        this.setState({
+          templates: templates, sheet: 'step', editingTplId: null, errors: {},
+          draft: Object.assign({}, d, { saveTemplate: false, templateName: '', name: name }),
+        });
+      }
+      return;
+    }
+    let templates = this.state.templates;
+    if (d.saveTemplate) templates = templates.concat([Object.assign({ id: 'tpl' + Date.now(), name: d.templateName.trim() }, base)]);
+    const step = Object.assign({ id: this.state.editingId || 's' + Date.now(), name: d.name || '' }, base);
+    const steps = this.state.editingId
+      ? this.state.steps.map(s => s.id === step.id ? step : s)
+      : this.state.steps.concat([step]);
+    this.setState({ steps: steps, templates: templates, sheet: null, draft: null, errors: {}, editingId: null });
+  };
+
+  applyTemplate(t) {
+    const patch = { reps: t.reps, name: t.name };
+    if (String(t.pace).trim()) { patch.paceMode = t.paceMode; patch.pace = t.pace; patch.paceMax = t.paceMax; }
+    if (String(t.value).trim()) { patch.measure = t.measure; patch.value = t.value; }
+    if (t.recovery) { patch.recovery = true; patch.recDur = t.recDur; patch.recPaceMode = t.recPaceMode; patch.recPace = t.recPace; patch.recPaceMax = t.recPaceMax; }
+    this.setDraft('*', patch);
+  }
+
+  bumpReps(n) {
+    const cur = Math.max(1, parseInt(this.state.draft.reps, 10) || 1);
+    this.setDraft('reps', Math.max(1, Math.min(99, cur + n)));
+  }
+
+  renderVals() {
+    const S = this.session();
+    const d = this.state.draft || this.blank();
+    const uD = this.unitDist(), uP = this.unitPace();
+    const paceOf = (st) => st.paceMode === 'range' ? st.pace + '–' + st.paceMax : st.pace;
+
+    const rows = this.state.steps.map((st, idx) => {
+      const m = this.metrics(st);
+      const isTurn = S.turn && S.turn.i === idx;
+      let markerText = '';
+      if (isTurn) {
+        const t = S.turn;
+        const rep = t.reps > 1 ? ' de la répétition ' + t.rep + ' sur ' + t.reps : '';
+        const where = t.kind === 'rec' ? 'pendant la récupération' + rep : 'pendant l’effort' + rep;
+        markerText = 'Demi‑tour ' + where + ' — ' + this.fDist(t.intoD) + ' ' + uD + ' après son début (' + this.fSec(t.intoT) + ').';
+      }
+      return {
+        num: idx + 1,
+        name: this.autoName(st),
+        showReps: st.reps > 1,
+        repsText: '× ' + st.reps,
+        paceText: paceOf(st) + ' ' + uP,
+        measureText: st.measure === 'distance' ? this.fDist(this.parseDist(st.value).km || 0) + ' ' + uD : this.fSec((this.parseMMSS(st.value).sec) || 0) + ' min',
+        totalsText: m.ok
+          ? '≈ ' + this.fRange(m.dMin, m.dMax, (x) => this.fDist(x), 0.005) + ' ' + uD + '  ·  ' + this.fRange(m.tMin, m.tMax, (x) => this.fSec(x), 1) + ' min'
+          : 'Valeurs incomplètes',
+        showRec: !!st.recovery,
+        recText: st.recovery ? 'récup ' + st.recDur + ' à ' + (st.recPaceMode === 'range' ? st.recPace + '–' + st.recPaceMax : st.recPace) + ' ' + uP : '',
+        marker: isTurn,
+        markerText: markerText,
+        onEdit: () => this.editStep(st),
+        onDelete: (e) => { e.stopPropagation(); this.setState({ steps: this.state.steps.filter(x => x.id !== st.id) }); },
+      };
+    });
+
+    const hasTurn = !!S.turn;
+    const choice = this.themeChoice(), resolved = this.resolvedTheme();
+    const on = 'var(--accent)', onFg = 'var(--on-accent)', off = 'transparent', offFg = 'var(--muted)';
+    const pv = (() => {
+      if (this.state.sheet === 'template') return 'Un modèle peut ne définir que l’allure, que la longueur, ou les deux — laissez vide ce que vous voulez remplir plus tard.';
+      const m = this.metrics(d);
+      if (!m.ok) return 'Allures et durées au format mm.ss — 1.30 = 1 min 30 s, 2.1 = 2 min 1 s.';
+      return 'Cette étape : ' + this.fRange(m.dMin, m.dMax, (x) => this.fDist(x), 0.005) + ' ' + uD
+        + ' en ' + this.fRange(m.tMin, m.tMax, (x) => this.fSec(x), 1) + ' min'
+        + (m.rec ? ', récupération comprise après chaque répétition.' : '.');
+    })();
+
+    return {
+      rootRef: (el) => { this.rootEl = el; },
+      sheetRef: this.setSheetEl,
+      rows: rows,
+      isEmpty: this.state.steps.length === 0,
+      stepCountText: this.state.steps.length + (this.state.steps.length > 1 ? ' étapes' : ' étape'),
+      distUnitLabel: uD,
+      totalDistText: S.dMid > 0 ? this.fRange(S.dMin, S.dMax, (x) => this.fDist(x), 0.005) : '—',
+      totalDurText: S.tMid > 0 ? this.fRange(S.tMin, S.tMax, (x) => this.fSec(x), 1) : '—',
+      turnMain: hasTurn ? this.fDist(S.turn.dist) + ' ' + uD : '—',
+      turnSub: hasTurn
+        ? 'après ' + this.fSec(S.turn.time) + ' min de course · étape ' + (S.turn.i + 1) + ' sur ' + this.state.steps.length
+        : 'Ajoutez des étapes pour connaître le point de demi‑tour.',
+
+      sheetOpen: !!this.state.sheet,
+      sheetTitle: this.state.sheet === 'settings' ? 'Paramètres' : (this.state.sheet === 'template' ? (this.state.editingTplId ? 'Modifier le modèle' : 'Nouveau modèle') : (this.state.editingId ? 'Modifier l’étape' : 'Nouvelle étape')),
+      submitLabel: this.state.sheet === 'settings' ? 'Enregistrer' : (this.state.sheet === 'template' ? (this.state.editingTplId ? 'Enregistrer' : 'Créer le modèle') : (this.state.editingId ? 'Enregistrer' : 'Ajouter')),
+      tplRows: this.state.templates.map(t => ({
+        name: t.name,
+        detail: [
+          String(t.pace).trim() ? (t.paceMode === 'range' ? t.pace + '–' + t.paceMax : t.pace) + ' ' + uP : '',
+          String(t.value).trim() ? (t.measure === 'distance' ? t.value + ' ' + uD : t.value + ' min') : '',
+          t.recovery ? 'récup ' + t.recDur : '',
+        ].filter(Boolean).join('  ·  '),
+        onEdit: () => this.openTemplate(t),
+        onDelete: () => this.deleteTemplate(t.id),
+      })),
+      noTemplates: this.state.templates.length === 0,
+      isTemplateMode: this.state.sheet === 'template',
+      isStepMode: this.state.sheet === 'step',
+      isSettings: this.state.sheet === 'settings',
+      isEditor: this.state.sheet === 'step' || this.state.sheet === 'template',
+      openSettingsSheet: this.openSettings,
+      defaultRecText: this.state.settings.recPaceMode === 'range'
+        ? this.state.settings.recPace + '–' + this.state.settings.recPaceMax + ' ' + uP
+        : this.state.settings.recPace + ' ' + uP,
+      showTemplatePicker: this.state.sheet === 'step' && !this.state.editingId,
+      draft: d,
+      errors: this.state.errors,
+      paceError: this.state.errors.pace || this.state.errors.paceMax || '',
+      optionalNote: this.state.sheet === 'template' ? '· facultatif' : '',
+      isPaceRange: d.paceMode === 'range',
+      paceSuffix: uP,
+      valueSuffix: d.measure === 'distance' ? uD : 'mm.ss',
+      valuePlaceholder: d.measure === 'distance' ? '1,5' : '10.00',
+      distToggleLabel: 'Distance (' + uD + ')',
+      paceSingleBg: d.paceMode === 'single' ? on : off,
+      paceSingleFg: d.paceMode === 'single' ? onFg : offFg,
+      paceRangeBg: d.paceMode === 'range' ? on : off,
+      paceRangeFg: d.paceMode === 'range' ? onFg : offFg,
+      distBg: d.measure === 'distance' ? on : off,
+      distFg: d.measure === 'distance' ? onFg : offFg,
+      durBg: d.measure === 'duration' ? on : off,
+      durFg: d.measure === 'duration' ? onFg : offFg,
+      recOn: !!d.recovery,
+      recBg: d.recovery ? on : 'transparent',
+      recMark: d.recovery ? '✓' : '',
+      recPaceError: this.state.errors.recPace || '',
+      isRecRange: d.recPaceMode === 'range',
+      recSingleBg: d.recPaceMode === 'single' ? on : off,
+      recSingleFg: d.recPaceMode === 'single' ? onFg : offFg,
+      recRangeBg: d.recPaceMode === 'range' ? on : off,
+      recRangeFg: d.recPaceMode === 'range' ? onFg : offFg,
+      toggleRecovery: () => this.setDraft('recovery', !this.state.draft.recovery),
+      setRecSingle: () => this.setDraft('recPaceMode', 'single'),
+      setRecRange: () => this.setDraft('recPaceMode', 'range'),
+      saveTplBg: d.saveTemplate ? on : 'transparent',
+      saveTplMark: d.saveTemplate ? '✓' : '',
+      previewLine: pv,
+      hintsOn: this.props.showHints !== false,
+      templateChips: this.state.templates.map(t => ({
+        name: t.name,
+        hint: String(t.pace).trim()
+          ? (t.paceMode === 'range' ? t.pace + '–' + t.paceMax : t.pace) + ' ' + uP
+          : (t.measure === 'distance' ? t.value + ' ' + uD : t.value + ' min'),
+        bg: 'var(--surface-2)', border: 'var(--line-2)',
+        onPick: () => this.applyTemplate(t),
+      })),
+
+      openStepSheet: this.openStep,
+      openTemplateSheet: () => this.openTemplate(null),
+      closeSheet: this.close,
+      submitSheet: this.submit,
+      onSheetKey: this.onKey,
+      onField: (e) => this.setDraft(e.target.getAttribute('data-field'), e.target.value),
+      setPaceSingle: () => this.setDraft('paceMode', 'single'),
+      setPaceRange: () => this.setDraft('paceMode', 'range'),
+      setMeasureDistance: () => this.setDraft('*', { measure: 'distance', value: '' }),
+      setMeasureDuration: () => this.setDraft('*', { measure: 'duration', value: '' }),
+      repsUp: () => this.bumpReps(1),
+      repsDown: () => this.bumpReps(-1),
+      toggleSaveTemplate: () => this.setDraft('saveTemplate', !this.state.draft.saveTemplate),
+      resetSession: () => this.setState({ steps: [] }),
+      isDark: resolved === 'dark',
+      setThemeSystem: () => this.setState({ theme: 'system' }),
+      setThemeLight: () => this.setState({ theme: 'light' }),
+      setThemeDark: () => this.setState({ theme: 'dark' }),
+      thSysBg: choice === 'system' ? on : off,
+      thSysFg: choice === 'system' ? onFg : offFg,
+      thLightBg: choice === 'light' ? on : off,
+      thLightFg: choice === 'light' ? onFg : offFg,
+      thDarkBg: choice === 'dark' ? on : off,
+      thDarkFg: choice === 'dark' ? onFg : offFg,
+      themeNote: choice === 'system'
+        ? 'Suit le réglage d’Android · actuellement ' + (resolved === 'dark' ? 'sombre' : 'clair') + '.'
+        : 'Thème ' + (resolved === 'dark' ? 'sombre' : 'clair') + ' forcé, quel que soit le réglage du système.',
+    };
+  }
+}
+</script>
+</body>
+</html>
