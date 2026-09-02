@@ -37,6 +37,10 @@ via ADB, puis lance l'application.
 ./scripts/deploy.sh --help             # toutes les options
 ```
 
+Si plusieurs appareils sont connectés, le script affiche un menu de sélection
+(modèle et version d'Android de chacun). `-s` court-circuite le menu, ce qui est
+nécessaire quand le script tourne sans terminal interactif.
+
 Prérequis :
 
 - `adb` (dans le `PATH`, ou trouvé via `ANDROID_HOME` / `ANDROID_SDK_ROOT`) ;

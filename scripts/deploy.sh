@@ -43,8 +43,9 @@ Compile l'APK avec Gradle puis l'installe sur un téléphone Android via ADB.
 
 Options :
   -r, --release          Compile la variante release au lieu de debug.
-  -s, --serial SERIAL    Numéro de série de l'appareil (sinon : détection auto,
-                         ou variable d'environnement ANDROID_SERIAL).
+  -s, --serial SERIAL    Numéro de série de l'appareil. Sans cette option : le
+                         seul appareil connecté, la valeur d'ANDROID_SERIAL, ou
+                         un menu de sélection s'il y en a plusieurs.
   -c, --connect HOTE[:PORT]
                          Se connecte d'abord en ADB sans fil (port 5555 par
                          défaut) et utilise cet appareil comme cible.
@@ -109,6 +110,40 @@ list_unusable_devices() {
     "$ADB" devices | awk 'NR > 1 && NF >= 2 && $2 != "device" { print $1 " (" $2 ")" }'
 }
 
+# « SERIAL — Modèle (Android 14) », en tolérant un getprop muet.
+describe_device() {
+    local serial="$1" model android
+    model="$("$ADB" -s "$serial" shell getprop ro.product.model 2>/dev/null | tr -d '\r' || true)"
+    android="$("$ADB" -s "$serial" shell getprop ro.build.version.release 2>/dev/null | tr -d '\r' || true)"
+    printf '%s%s%s\n' "$serial" "${model:+ — $model}" "${android:+ (Android $android)}"
+}
+
+# Menu de sélection quand plusieurs appareils sont branchés. Écrit le numéro de
+# série choisi sur stdout, tout le reste sur stderr (stdout est capturé).
+choose_device() {
+    local devices=("$@") i choice
+    printf '%sPlusieurs appareils connectés :%s\n' "$C_BOLD" "$C_RESET" >&2
+    for i in "${!devices[@]}"; do
+        printf '  %2d) %s\n' "$((i + 1))" "$(describe_device "${devices[i]}")" >&2
+    done
+    while true; do
+        printf 'Lequel utiliser ? [1-%d, q pour annuler] ' "${#devices[@]}" >&2
+        read -r choice < /dev/tty || die "sélection interrompue."
+        case "$choice" in
+            q|Q)      die "annulé." ;;
+            "")       ;;
+            *[!0-9]*) warn "entrez un numéro entre 1 et ${#devices[@]}." ;;
+            *)
+                if (( choice >= 1 && choice <= ${#devices[@]} )); then
+                    printf '%s\n' "${devices[choice - 1]}"
+                    return
+                fi
+                warn "il n'y a pas d'appareil n°$choice."
+                ;;
+        esac
+    done
+}
+
 if [[ -n "$CONNECT" ]]; then
     [[ "$CONNECT" == *:* ]] || CONNECT="$CONNECT:5555"
     info "Connexion sans fil à $CONNECT"
@@ -134,16 +169,20 @@ débogage USB, puis relancez (« adb devices » pour vérifier)."
             ;;
         1) SERIAL="${devices[0]}" ;;
         *)
-            warn "Plusieurs appareils connectés :"
-            printf '    %s\n' "${devices[@]}" >&2
-            die "précisez la cible avec « --serial <numéro> »."
+            # -r /dev/tty ne suffit pas : le fichier existe même sans
+            # terminal de contrôle, et c'est l'ouverture qui échoue.
+            if { : < /dev/tty; } 2>/dev/null; then
+                SERIAL="$(choose_device "${devices[@]}")"
+            else
+                warn "Plusieurs appareils connectés :"
+                printf '    %s\n' "${devices[@]}" >&2
+                die "sans terminal interactif, précisez la cible avec « --serial <numéro> »."
+            fi
             ;;
     esac
 fi
 
-model="$(adb_cmd shell getprop ro.product.model 2>/dev/null | tr -d '\r' || true)"
-android="$(adb_cmd shell getprop ro.build.version.release 2>/dev/null | tr -d '\r' || true)"
-ok "Appareil : $SERIAL${model:+ — $model}${android:+ (Android $android)}"
+ok "Appareil : $(describe_device "$SERIAL")"
 
 # --- SDK Android ------------------------------------------------------------
 
