@@ -10,6 +10,14 @@ Une application Android permettant de configurer une séance de course à pieds 
 
 ## Build
 
+Le projet cible Java 17. La version du JDK est figée dans `.sdkmanrc` pour
+[SDKMAN](https://sdkman.io) :
+
+```
+sdk env install   # installe le JDK du projet s'il manque
+sdk env           # bascule le shell courant dessus
+```
+
 ```
 ./gradlew :domain:test        # tests du module de calcul
 ./gradlew :app:assembleDebug  # build de l'application
