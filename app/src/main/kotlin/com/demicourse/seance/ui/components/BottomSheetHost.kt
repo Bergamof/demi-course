@@ -22,6 +22,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -101,6 +102,7 @@ fun BottomSheetHost(
                             controller = controller, field = FieldKey.TEMPLATE_NAME, sheet = sheet, value = sheet.draft.templateName,
                             onValueChange = { viewModel.setField(FieldKey.TEMPLATE_NAME, it) }, onSubmit = { viewModel.submit() },
                             placeholder = "Fractionné 400 m", boxed = false, monospace = false, fontSize = 16.sp,
+                            keyboardType = KeyboardType.Text,
                             modifier = Modifier.weight(1f),
                         )
                     }
@@ -148,6 +150,7 @@ fun BottomSheetHost(
                                 controller = controller, field = FieldKey.TEMPLATE_NAME, sheet = sheet, value = sheet.draft.templateName,
                                 onValueChange = { viewModel.setField(FieldKey.TEMPLATE_NAME, it) }, onSubmit = { viewModel.submit() },
                                 placeholder = "Nom du modèle", boxed = false, monospace = false, fontSize = 15.sp,
+                                keyboardType = KeyboardType.Text,
                                 modifier = Modifier.weight(1f),
                             )
                         }

@@ -8,11 +8,17 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,9 +44,18 @@ fun SeanceScreen(viewModel: SeanceViewModel) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val colors = LocalSeanceColors.current
     val session = SessionCalculator.compute(state.steps, state.settings.halfBy)
+    val bottomBarInset = WindowInsets.safeDrawing.asPaddingValues().calculateBottomPadding()
 
     Box(modifier = Modifier.fillMaxSize().background(colors.bg)) {
-        Column(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                // The window is edge-to-edge: the background above paints under the status bar,
+                // but the content itself must clear it (and any display cutout / gesture bar).
+                .windowInsetsPadding(
+                    WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+                ),
+        ) {
             Header(onSettings = viewModel::openSettingsSheet, onReset = viewModel::resetSession)
 
             SummaryCard(
@@ -62,7 +77,7 @@ fun SeanceScreen(viewModel: SeanceViewModel) {
             } else {
                 LazyColumn(
                     modifier = Modifier.weight(1f).fillMaxWidth(),
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 96.dp),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 96.dp + bottomBarInset),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     itemsIndexed(state.steps, key = { _, step -> step.id }) { index, step ->
@@ -81,6 +96,9 @@ fun SeanceScreen(viewModel: SeanceViewModel) {
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .background(Brush.verticalGradient(listOf(colors.bg.copy(alpha = 0f), colors.bg, colors.bg)))
+                .windowInsetsPadding(
+                    WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
+                )
                 .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 16.dp),
         ) {
             Row(
