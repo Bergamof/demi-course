@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -164,6 +165,7 @@ fun BottomSheetHost(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun TemplatePicker(templates: List<StepSpec>, unit: PaceUnit, onPick: (StepSpec) -> Unit, onNew: () -> Unit) {
     val colors = LocalSeanceColors.current

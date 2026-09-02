@@ -1,0 +1,16 @@
+# Version du JDK utilisée par le projet, gérée par SDKMAN (https://sdkman.io).
+#
+#   sdk env install    # installe le JDK listé ici s'il manque
+#   sdk env            # bascule le shell courant sur cette version
+#   sdk env clear      # revient à la version par défaut
+#
+# Avec « sdkman_auto_env=true » dans ~/.sdkman/etc/config, la bascule est
+# automatique en entrant dans le répertoire du projet.
+#
+# Java 17 : c'est ce que ciblent app/build.gradle.kts (sourceCompatibility et
+# targetCompatibility VERSION_17) et le workflow CI (temurin 17). Pour changer
+# de révision : « sdk list java » donne les identifiants disponibles.
+java=17.0.13-tem
+
+# Gradle n'est volontairement pas listé : le wrapper (./gradlew) fixe déjà la
+# version utilisée (voir gradle/wrapper/gradle-wrapper.properties).

@@ -54,7 +54,7 @@ fun SeanceTextField(
     placeholder: String = "",
     monospace: Boolean = true,
     fontSize: TextUnit = 16.sp,
-    textAlign: TextAlign? = null,
+    textAlign: TextAlign = TextAlign.Unspecified,
     keyboardType: KeyboardType = KeyboardType.Decimal,
     boxed: Boolean = true,
     height: Dp = 52.dp,
