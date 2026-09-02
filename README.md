@@ -37,6 +37,12 @@ via ADB, puis lance l'application.
 ./scripts/deploy.sh --help             # toutes les options
 ```
 
-Prérequis : les *platform-tools* Android (`adb` dans le `PATH`, ou `ANDROID_HOME`
-défini), un JDK 17, et sur le téléphone les options développeur avec le
-« débogage USB » autorisé pour cet ordinateur.
+Prérequis :
+
+- `adb` (dans le `PATH`, ou trouvé via `ANDROID_HOME` / `ANDROID_SDK_ROOT`) ;
+- un SDK Android complet pour la compilation — le paquet `adb` seul ne suffit
+  pas. Le script le cherche via `ANDROID_HOME`, `ANDROID_SDK_ROOT`, `sdk.dir`
+  dans `local.properties`, le chemin d'`adb`, puis `~/Android/Sdk` ;
+- un JDK 17 (voir `.sdkmanrc` ci-dessus) ;
+- sur le téléphone : options développeur activées et « débogage USB » autorisé
+  pour cet ordinateur.

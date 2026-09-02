@@ -145,6 +145,67 @@ model="$(adb_cmd shell getprop ro.product.model 2>/dev/null | tr -d '\r' || true
 android="$(adb_cmd shell getprop ro.build.version.release 2>/dev/null | tr -d '\r' || true)"
 ok "Appareil : $SERIAL${model:+ — $model}${android:+ (Android $android)}"
 
+# --- SDK Android ------------------------------------------------------------
+
+# Gradle a besoin de l'emplacement du SDK ; l'avoir uniquement dans le PATH via
+# adb ne suffit pas. On le résout ici pour donner une erreur lisible plutôt que
+# le « SDK location not found » de l'Android Gradle Plugin.
+is_sdk_dir() {
+    local dir="$1" sub
+    [[ -d "$dir" ]] || return 1
+    for sub in platform-tools platforms build-tools cmdline-tools tools; do
+        [[ -d "$dir/$sub" ]] && return 0
+    done
+    return 1
+}
+
+find_sdk() {
+    local candidate adb_dir
+
+    for candidate in "${ANDROID_HOME:-}" "${ANDROID_SDK_ROOT:-}"; do
+        [[ -n "$candidate" ]] && is_sdk_dir "$candidate" && { printf '%s\n' "$candidate"; return; }
+    done
+
+    # sdk.dir de local.properties (ce qu'écrit Android Studio).
+    if [[ -f "$ROOT_DIR/local.properties" ]]; then
+        candidate="$(sed -n 's/^[[:space:]]*sdk\.dir[[:space:]]*=[[:space:]]*//p' "$ROOT_DIR/local.properties" | tail -1)"
+        candidate="${candidate//\\:/:}"
+        [[ -n "$candidate" ]] && is_sdk_dir "$candidate" && { printf '%s\n' "$candidate"; return; }
+    fi
+
+    # Déduit du chemin d'adb : <sdk>/platform-tools/adb.
+    adb_dir="$(dirname "$(readlink -f "$ADB")")"
+    if [[ "$(basename "$adb_dir")" == "platform-tools" ]] && is_sdk_dir "$(dirname "$adb_dir")"; then
+        printf '%s\n' "$(dirname "$adb_dir")"
+        return
+    fi
+
+    for candidate in "$HOME/Android/Sdk" "$HOME/android-sdk" "/opt/android-sdk" "/usr/lib/android-sdk"; do
+        is_sdk_dir "$candidate" && { printf '%s\n' "$candidate"; return; }
+    done
+
+    return 1
+}
+
+if [[ $DO_BUILD -eq 1 ]]; then
+    if SDK="$(find_sdk)"; then
+        ok "SDK Android : $SDK"
+        export ANDROID_HOME="$SDK"
+        export ANDROID_SDK_ROOT="$SDK"
+    else
+        warn "SDK Android introuvable — Gradle ne pourra pas compiler le module app."
+        cat >&2 <<EOF
+    Trois façons de le déclarer :
+      • définir ANDROID_HOME (par ex. « export ANDROID_HOME=\$HOME/Android/Sdk ») ;
+      • écrire « sdk.dir=/chemin/vers/le/sdk » dans $ROOT_DIR/local.properties ;
+      • installer le SDK depuis Android Studio, ou les cmdline-tools puis
+        « sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0" ».
+    Le paquet « adb » seul ne fournit pas de SDK complet.
+EOF
+        die "emplacement du SDK Android inconnu."
+    fi
+fi
+
 # --- build ------------------------------------------------------------------
 
 if [[ "$VARIANT" == "release" ]]; then
