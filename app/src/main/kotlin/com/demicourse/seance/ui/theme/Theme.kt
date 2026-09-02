@@ -1,10 +1,14 @@
 package com.demicourse.seance.ui.theme
 
+import android.app.Activity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 import com.demicourse.domain.ThemeChoice
 
 /**
@@ -119,6 +123,21 @@ fun resolveIsDark(themeChoice: ThemeChoice): Boolean = when (themeChoice) {
 
 @Composable
 fun SeanceTheme(themeChoice: ThemeChoice, content: @Composable () -> Unit) {
-    val colors = if (resolveIsDark(themeChoice)) DarkColors else LightColors
+    val isDark = resolveIsDark(themeChoice)
+    val colors = if (isDark) DarkColors else LightColors
+
+    // The window is edge-to-edge (see MainActivity), so the system bars sit on top of our own
+    // background: their icons have to follow the *app's* theme choice, not the system's.
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as Activity).window
+            WindowCompat.getInsetsController(window, view).apply {
+                isAppearanceLightStatusBars = !isDark
+                isAppearanceLightNavigationBars = !isDark
+            }
+        }
+    }
+
     CompositionLocalProvider(LocalSeanceColors provides colors, content = content)
 }

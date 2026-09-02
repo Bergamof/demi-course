@@ -26,6 +26,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
@@ -89,7 +90,17 @@ fun SeanceTextField(
             singleLine = true,
             textStyle = style,
             cursorBrush = SolidColor(colors.accent),
-            keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = ImeAction.Next),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = keyboardType,
+                // Free-text fields (the template name) get sentence capitalization; every other
+                // field is a pace/distance/duration and must not turn into a text keyboard.
+                capitalization = if (keyboardType == KeyboardType.Text) {
+                    KeyboardCapitalization.Sentences
+                } else {
+                    KeyboardCapitalization.None
+                },
+                imeAction = ImeAction.Next,
+            ),
             keyboardActions = KeyboardActions(onNext = { controller.advance(sheet, selectAll = true, onSubmit) }),
             decorationBox = { inner ->
                 Box(contentAlignment = Alignment.CenterStart) {
