@@ -1,0 +1,47 @@
+name: Tests
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+jobs:
+  domain-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run domain unit tests
+        run: ./gradlew :domain:test
+
+      # Turns the JUnit XML into a per-test table shown in the PR: a check run
+      # with the full results, a summary comment, and inline annotations on the
+      # lines that failed. Runs even when the tests failed — that's the point.
+      - name: Publish test results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          check_name: Domain test results
+          comment_mode: always
+          files: domain/build/test-results/test/*.xml
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: domain-test-report
+          path: domain/build/reports/tests/test
+          if-no-files-found: ignore
