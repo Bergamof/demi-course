@@ -52,14 +52,20 @@ object Formatting {
         val repSuffix = if (turn.reps > 1) " de la répétition ${turn.rep} sur ${turn.reps}" else ""
         val where = if (turn.kind == SegmentKind.REC) "pendant la récupération$repSuffix" else "pendant l’effort$repSuffix"
         val uD = PaceMath.unitDistanceLabel(unit)
-        // The remainder is expressed in whatever the demi-tour is based on (the halfBy setting).
+        // What is left of the effort or recovery being run, in whatever the demi-tour
+        // is based on (the halfBy setting) — the figure to check against a watch.
         val rest = if (halfBy == HalfBy.DURATION) {
-            formatDuration(turn.stepRestTime)
+            formatDuration(turn.restTime)
         } else {
-            "${formatDistance(turn.stepRestDistance)} $uD"
+            "${formatDistance(turn.restDistance)} $uD"
+        }
+        val restScope = when {
+            turn.kind == SegmentKind.REC -> "dans la récupération"
+            turn.reps > 1 -> "dans la répétition"
+            else -> "dans l’effort"
         }
         return "Demi‑tour $where — ${formatDistance(turn.intoDistance)} $uD après son début " +
-            "(${formatDuration(turn.intoTime)}) · reste $rest dans l’étape."
+            "(${formatDuration(turn.intoTime)}) · il reste $rest $restScope."
     }
 
     fun totalDistanceText(session: SessionResult, unit: PaceUnit): String =
