@@ -46,7 +46,8 @@ Two Gradle modules, deliberately split so the math is testable without the Andro
 
 ### Functional rules worth knowing before changing behavior
 
-- `mm.ss` format: `1.30` = 1m30s; a single digit after the separator is the *ones* digit of seconds, not tens (`2.1` = `2.01` = 2m1s). Seconds ≥ 60 is rejected.
+- `mm.ss` format: `1.30` = 1m30s; a single digit after the separator is the *ones* digit of seconds, not tens (`2.1` = `2.01` = 2m1s). Seconds ≥ 60 is rejected. That's the **input** format only — durations and paces are *displayed* as `3m02s` / `3m02s/km` via `PaceMath.formatDuration` (and `formatMmSsField` for a raw field), which drops a zero part (`3m`, not `3m00s`; `1s`, not `0m01s`). The prototype displayed `mm.ss` everywhere; this is a deliberate divergence from it.
+- The turnaround marker on a step card also reports what is left of that step (all remaining repetitions, recovery included), expressed in distance or time depending on the `HalfBy` setting — `TurnPoint.stepRestDistance` / `stepRestTime`.
 - A template requires at least one of pace or length (not both); the other can be left blank and is only applied if the template defines it (`applyTemplate` in the ViewModel copies reps/name unconditionally, pace/length/recovery only if the template set them).
 - Recovery (when enabled) applies after **every** repetition, including the last.
 - Default recovery pace is a 9.00–11.00 range, stored in `AppSettings.recovery` and used to prefill new step drafts; editable from the settings sheet.

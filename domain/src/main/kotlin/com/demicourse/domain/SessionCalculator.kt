@@ -22,6 +22,12 @@ data class TurnPoint(
     /** How far into this particular segment the turnaround falls. */
     val intoDistance: Double,
     val intoTime: Double,
+    /**
+     * What is left of the whole step (all of its remaining repetitions, recovery
+     * included) once the turnaround point is passed.
+     */
+    val stepRestDistance: Double,
+    val stepRestTime: Double,
 )
 
 data class SessionResult(
@@ -49,11 +55,15 @@ object SessionCalculator {
     fun compute(steps: List<StepSpec>, halfBy: HalfBy): SessionResult {
         var dMin = 0.0; var dMax = 0.0; var tMin = 0.0; var tMax = 0.0
         val segments = mutableListOf<Segment>()
+        // Per-step mid totals, so the turnaround can report what is left of its step.
+        val stepDistance = DoubleArray(steps.size)
+        val stepTime = DoubleArray(steps.size)
 
         steps.forEachIndexed { index, step ->
             val m = PaceMath.metrics(step)
             if (!m.ok) return@forEachIndexed
             dMin += m.dMin; dMax += m.dMax; tMin += m.tMin; tMax += m.tMax
+            stepDistance[index] = m.dMid; stepTime[index] = m.tMid
             val run = m.run!!
             for (rep in 1..m.reps) {
                 segments += Segment(index, rep, m.reps, SegmentKind.RUN, run.dMid, run.tMid)
@@ -69,8 +79,15 @@ object SessionCalculator {
         var acc = 0.0
         var accTime = 0.0
         var accDist = 0.0
+        // Same accumulators, but reset at each step boundary: what the current step has used up so far.
+        var inStepDist = 0.0
+        var inStepTime = 0.0
+        var currentStep = -1
         var turn: TurnPoint? = null
         for (seg in segments) {
+            if (seg.stepIndex != currentStep) {
+                currentStep = seg.stepIndex; inStepDist = 0.0; inStepTime = 0.0
+            }
             val step = if (byDistance) seg.distance else seg.time
             if (acc + step >= target && step > 0) {
                 val f = (target - acc) / step
@@ -78,10 +95,13 @@ object SessionCalculator {
                     stepIndex = seg.stepIndex, rep = seg.rep, reps = seg.reps, kind = seg.kind,
                     distance = accDist + f * seg.distance, time = accTime + f * seg.time,
                     intoDistance = f * seg.distance, intoTime = f * seg.time,
+                    stepRestDistance = (stepDistance[seg.stepIndex] - (inStepDist + f * seg.distance)).coerceAtLeast(0.0),
+                    stepRestTime = (stepTime[seg.stepIndex] - (inStepTime + f * seg.time)).coerceAtLeast(0.0),
                 )
                 break
             }
             acc += step; accTime += seg.time; accDist += seg.distance
+            inStepDist += seg.distance; inStepTime += seg.time
         }
 
         return SessionResult(dMin, dMax, tMin, tMax, dMid, tMid, turn, segments)

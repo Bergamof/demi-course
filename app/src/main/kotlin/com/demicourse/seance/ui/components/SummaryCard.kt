@@ -35,7 +35,7 @@ fun SummaryCard(session: SessionResult, unit: PaceUnit, stepCount: Int, modifier
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             StatColumn("Distance (${com.demicourse.domain.PaceMath.unitDistanceLabel(unit)})", Formatting.totalDistanceText(session, unit), Modifier.weight(1f))
-            StatColumn("Durée (min)", Formatting.totalDurationText(session), Modifier.weight(1f))
+            StatColumn("Durée", Formatting.totalDurationText(session), Modifier.weight(1f))
         }
 
         Row(

@@ -59,6 +59,44 @@ class SessionCalculatorTest {
     }
 
     @Test
+    fun `turnaround reports what is left of its step, repetitions included`() {
+        val s = SessionCalculator.compute(seedSteps, HalfBy.DISTANCE)
+        val turn = s.turn!!
+        // The turnaround falls in rep 2 of the 4x1 km step, at half of 6.897 km = 3.449 km;
+        // the warm-up ate 1.667 km, so 1.782 km of the step are done and 4 - 1.782 remain.
+        val doneInStep = s.dMid / 2 - 1.0 / 6.0 * 10.0
+        assertEquals(4.0 - doneInStep, turn.stepRestDistance, 1e-6)
+        // Same point expressed in time: the step's own total is 4 x 1 km at the 4.30-4.45 midpoint.
+        assertEquals(4.0 * 277.5 - doneInStep * 277.5, turn.stepRestTime, 1e-6)
+    }
+
+    @Test
+    fun `step remainder is measured across the whole step, not just the current segment`() {
+        val withRecovery = StepSpec(
+            id = "r1", paceMode = PaceMode.SINGLE, pace = "4.00", measure = Measure.DISTANCE, value = "1", reps = 2,
+            recovery = true, recDur = "5.00", recPaceMode = PaceMode.SINGLE, recPace = "10.00",
+        )
+        val s = SessionCalculator.compute(listOf(withRecovery), HalfBy.DISTANCE)
+        val turn = s.turn!!
+        // The step is 2 x (1 km run + 0.5 km recovery) = 3 km, so the turnaround at 1.5 km lands
+        // exactly at the end of the first recovery: the whole second repetition is still to come.
+        assertEquals(SegmentKind.REC, turn.kind)
+        assertEquals(1.5, turn.stepRestDistance, 1e-6)
+        // Time: the step totals 2 x (240 s + 300 s) = 1080 s, of which the first repetition's 540 s are done.
+        assertEquals(540.0, turn.stepRestTime, 1e-6)
+    }
+
+    @Test
+    fun `a lone step leaves its own second half after the turnaround`() {
+        // One step, one repetition: half of it is done at the turnaround, so half of it remains.
+        val single = StepSpec(id = "o1", paceMode = PaceMode.SINGLE, pace = "5.00", measure = Measure.DISTANCE, value = "4")
+        val turn = SessionCalculator.compute(listOf(single), HalfBy.DISTANCE).turn!!
+        assertEquals(2.0, turn.intoDistance, 1e-6)
+        assertEquals(2.0, turn.stepRestDistance, 1e-6)
+        assertEquals(600.0, turn.stepRestTime, 1e-6)
+    }
+
+    @Test
     fun `empty session has no turnaround`() {
         val s = SessionCalculator.compute(emptyList(), HalfBy.DISTANCE)
         assertEquals(0.0, s.dMid, 1e-9)

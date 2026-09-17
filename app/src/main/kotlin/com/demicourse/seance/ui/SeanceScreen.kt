@@ -84,6 +84,7 @@ fun SeanceScreen(viewModel: SeanceViewModel) {
                         val turn = session.turn?.takeIf { it.stepIndex == index }
                         com.demicourse.seance.ui.components.StepCard(
                             step = step, index = index, unit = state.settings.unit, turn = turn, stepCount = state.steps.size,
+                            halfBy = state.settings.halfBy,
                             onEdit = { viewModel.editStep(step) }, onDelete = { viewModel.deleteStep(step.id) },
                         )
                     }
