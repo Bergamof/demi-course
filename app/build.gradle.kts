@@ -10,24 +10,24 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
-// --- Versionnement ----------------------------------------------------------
+// --- Versioning -------------------------------------------------------------
 //
-// Prod : date de publication + rang de la publication ce jour-là, « 2026.09.18-1 »
-// pour la première release du 18 septembre 2026, « 2026.09.18-2 » pour la
-// deuxième. Le rang est calculé par .github/workflows/release.yml (à partir des
-// tags déjà publiés) et passé ici en propriétés Gradle. Un build release local,
-// sans ces propriétés, prend le rang 0 : il n'a jamais été publié.
+// Prod: publication date plus that day's publication rank — "2026.09.18-1" for
+// the first release of 18 September 2026, "2026.09.18-2" for the second. The
+// rank is worked out by .github/workflows/release.yml (from the tags already
+// published) and handed over as Gradle properties. A local release build, with
+// no such property, gets rank 0: it was never published.
 //
-// Dev : date et heure du build, « dev-2026.09.18-12.23 ». La variante dev a son
-// propre applicationId (suffixe « .dev ») et son propre nom affiché, donc elle
-// cohabite avec la version de prod sur le téléphone au lieu de l'écraser.
+// Dev: build date and time, "dev-2026.09.18-12.23". The dev variant has its own
+// applicationId (".dev" suffix) and its own displayed name, so it sits next to
+// the prod version on the phone instead of overwriting it.
 
 val RELEASE_VERSION_PATTERN = Regex("""^(\d{4})\.(\d{2})\.(\d{2})-(\d{1,2})$""")
 
-/** aa mm jj rr → un entier croissant : 2026.09.18-1 devient 26_09_18_01. */
+/** yy mm dd nn → an increasing integer: 2026.09.18-1 becomes 26_09_18_01. */
 fun releaseVersionCodeOf(versionName: String): Int {
     val parts = RELEASE_VERSION_PATTERN.find(versionName)
-        ?: error("Version release invalide : « $versionName » (attendu aaaa.mm.jj-n, n ≤ 99).")
+        ?: error("Invalid release version: \"$versionName\" (expected yyyy.MM.dd-n, n ≤ 99).")
     val (year, month, day, seq) = parts.destructured
     return ((year.toInt() % 100) * 10_000 + month.toInt() * 100 + day.toInt()) * 100 + seq.toInt()
 }
@@ -40,15 +40,15 @@ val releaseVersionCode: Int = (findProperty("appVersionCode") as String?)?.takeI
     ?: releaseVersionCodeOf(releaseVersionName)
 
 val devVersionName: String = "dev-" + buildTime.format(DateTimeFormatter.ofPattern("yyyy.MM.dd-HH.mm"))
-// Minutes écoulées depuis 2020 : croissant d'un build dev au suivant, et assez
-// petit pour tenir dans l'entier signé attendu par Android.
+// Minutes since 2020: grows from one dev build to the next, and stays small
+// enough for the signed integer Android expects.
 val devVersionCode: Int = Duration.between(LocalDateTime.of(2020, 1, 1, 0, 0), buildTime).toMinutes().toInt()
 
-// --- Signature de release ---------------------------------------------------
+// --- Release signing --------------------------------------------------------
 //
-// Lue depuis keystore.properties (local, non versionné) ou depuis les variables
-// d'environnement posées par le workflow à partir des secrets du dépôt. Sans
-// elle, l'APK release sort non signé : il se construit mais ne s'installe pas.
+// Read from keystore.properties (local, untracked) or from the environment
+// variables the workflow sets from the repository secrets. With neither, the
+// release APK comes out unsigned: it builds, but it will not install.
 
 val keystoreProperties = Properties().apply {
     val file = rootProject.file("keystore.properties")
@@ -68,8 +68,8 @@ android {
         applicationId = "com.demicourse.seance"
         minSdk = 26
         targetSdk = 35
-        // Valeurs par défaut ; androidComponents.onVariants (plus bas) les
-        // remplace par celles de la variante réellement construite.
+        // Defaults; androidComponents.onVariants (below) replaces them with the
+        // values of whichever variant is actually being built.
         versionCode = releaseVersionCode
         versionName = releaseVersionName
     }
@@ -87,8 +87,8 @@ android {
 
     buildTypes {
         debug {
-            // Installée à côté de la prod, et identifiable d'un coup d'œil sur
-            // l'écran d'accueil.
+            // Installs alongside prod, and tells itself apart at a glance on the
+            // home screen.
             applicationIdSuffix = ".dev"
             resValue("string", "app_name", "Demi Course (dev)")
             buildConfigField("String", "APP_VERSION_NAME", "\"$devVersionName\"")

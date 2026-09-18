@@ -141,8 +141,8 @@ fun SettingsBody(
             }
         }
 
-        // Discret, tout en bas : « dev-2026.09.18-12.23 » pour un build de
-        // développement, « 2026.09.18-1 » pour une version publiée.
+        // Discreet, right at the bottom: "dev-2026.09.18-12.23" for a
+        // development build, "2026.09.18-1" for a published one.
         Text(
             "Version ${BuildConfig.APP_VERSION_NAME}",
             color = colors.muted3,

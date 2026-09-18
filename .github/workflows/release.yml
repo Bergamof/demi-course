@@ -1,8 +1,8 @@
 name: Release
 
-# Chaque arrivée sur main (merge d'une PR, push direct) publie une release
-# GitHub : un tag « aaaa.mm.jj-n » où n est le rang de la publication dans la
-# journée, et l'APK de prod en pièce jointe.
+# Every arrival on main (a merged PR, a direct push) publishes a GitHub
+# release: a "yyyy.MM.dd-n" tag where n is that day's publication rank, with the
+# prod APK attached.
 on:
   push:
     branches: [main]
@@ -11,8 +11,8 @@ on:
 permissions:
   contents: write
 
-# Deux merges rapprochés calculeraient le même rang s'ils tournaient en
-# parallèle : on les sérialise.
+# Two merges close together would compute the same rank if they ran in
+# parallel, so they are serialized.
 concurrency:
   group: release-main
   cancel-in-progress: false
@@ -23,8 +23,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # Les tags existants servent à calculer le rang du jour, et
-          # l'historique à lister les commits de la release.
+          # The existing tags give the day's rank, and the history gives the
+          # commits this release contains.
           fetch-depth: 0
 
       - name: Set up JDK 17
@@ -43,12 +43,12 @@ jobs:
         id: version
         run: |
           set -euo pipefail
-          # Heure de Paris : la date de publication est celle du lieu de vie du
-          # projet, pas celle du runner (UTC).
+          # Paris time: the publication date is the one where the project
+          # lives, not the runner's (UTC).
           date="$(TZ=Europe/Paris date +%Y.%m.%d)"
 
-          # Rang de la publication dans la journée : le plus grand suffixe déjà
-          # utilisé, plus un.
+          # That day's publication rank: the highest suffix already used, plus
+          # one.
           last="$(git tag --list "${date}-*" \
                   | sed "s/^${date}-//" \
                   | grep -E '^[0-9]+$' \
@@ -56,19 +56,19 @@ jobs:
                   | tail -1 || true)"
           seq=$(( ${last:-0} + 1 ))
           if (( seq > 99 )); then
-            echo "::error::99 releases déjà publiées le ${date} ; le versionCode ne peut pas aller plus loin." >&2
+            echo "::error::99 releases already published on ${date}; the versionCode cannot go further." >&2
             exit 1
           fi
 
           version="${date}-${seq}"
-          # aa mm jj rr, croissant d'une release à la suivante.
+          # yy mm dd nn, increasing from one release to the next.
           version_code=$(( (10#${date:2:2} * 10000 + 10#${date:5:2} * 100 + 10#${date:8:2}) * 100 + seq ))
 
           {
             echo "version=$version"
             echo "version_code=$version_code"
           } >> "$GITHUB_OUTPUT"
-          echo "Version : $version (versionCode $version_code)"
+          echo "Version: $version (versionCode $version_code)"
 
       - name: Run domain unit tests
         run: ./gradlew :domain:test
@@ -80,7 +80,7 @@ jobs:
         run: |
           set -euo pipefail
           if [[ -z "${KEYSTORE_BASE64}" ]]; then
-            echo "Pas de secret ANDROID_KEYSTORE_BASE64 : l'APK sortira non signé." >&2
+            echo "No ANDROID_KEYSTORE_BASE64 secret: the APK will come out unsigned." >&2
             echo "signed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -104,7 +104,7 @@ jobs:
         run: |
           set -euo pipefail
           src="$(find app/build/outputs/apk/release -maxdepth 1 -name '*.apk' -print -quit)"
-          [[ -n "$src" ]] || { echo "::error::aucun APK produit." >&2; exit 1; }
+          [[ -n "$src" ]] || { echo "::error::no APK was produced." >&2; exit 1; }
           dest="${RUNNER_TEMP}/demi-course-${{ steps.version.outputs.version }}.apk"
           cp "$src" "$dest"
           echo "path=$dest" >> "$GITHUB_OUTPUT"
@@ -120,8 +120,8 @@ jobs:
           set -euo pipefail
           notes="$(mktemp)"
 
-          # `head` ferme le tuyau tôt : sans `|| true`, pipefail ferait sortir
-          # le script sur le SIGPIPE de git.
+          # `head` closes the pipe early: without `|| true`, pipefail would
+          # kill the script on git's SIGPIPE.
           previous="$(git tag --list --sort=-creatordate \
                       | grep -E '^[0-9]{4}\.[0-9]{2}\.[0-9]{2}-[0-9]+$' \
                       | head -1 || true)"
