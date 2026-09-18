@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">Demi Course</string>
+    <!-- app_name est généré par variante (resValue dans app/build.gradle.kts) :
+         « Demi Course » en release, « Demi Course (dev) » pour la variante dev. -->
 </resources>

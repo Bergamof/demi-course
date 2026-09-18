@@ -2,16 +2,24 @@
 #
 # Compile l'application et l'installe sur un téléphone Android branché en ADB.
 #
-#   ./scripts/deploy.sh                 # build debug + install + lancement
-#   ./scripts/deploy.sh --release       # variante release
+#   ./scripts/deploy.sh                 # build dev + install + lancement
+#   ./scripts/deploy.sh --release       # variante release (version de prod)
 #   ./scripts/deploy.sh -s SERIAL       # cible un appareil précis
 #   ./scripts/deploy.sh --help          # toutes les options
+#
+# Par défaut on installe une version de développement : applicationId suffixé
+# « .dev », nom « Demi Course (dev) » sur l'écran d'accueil et version
+# « dev-<date>-<heure> ». C'est une autre application aux yeux d'Android, donc
+# elle s'installe à côté de la version de prod sans l'écraser (données
+# comprises).
 #
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PACKAGE="com.demicourse.seance"
-ACTIVITY=".MainActivity"
+PACKAGE_BASE="com.demicourse.seance"
+# Non suffixée : l'applicationId change d'une variante à l'autre, pas le paquet
+# Java dans lequel l'activité est compilée.
+ACTIVITY="com.demicourse.seance.MainActivity"
 
 VARIANT="debug"
 SERIAL="${ANDROID_SERIAL:-}"
@@ -41,8 +49,13 @@ Usage: scripts/deploy.sh [options]
 
 Compile l'APK avec Gradle puis l'installe sur un téléphone Android via ADB.
 
+Sans option, c'est la version de développement qui est installée
+(« Demi Course (dev) », version dev-<date>-<heure>) : elle cohabite avec la
+version de prod sur le téléphone au lieu de la remplacer.
+
 Options :
-  -r, --release          Compile la variante release au lieu de debug.
+  -r, --release          Compile et installe la version de prod au lieu de la
+                         version de développement (APK signé requis).
   -s, --serial SERIAL    Numéro de série de l'appareil. Sans cette option : le
                          seul appareil connecté, la valeur d'ANDROID_SERIAL, ou
                          un menu de sélection s'il y en a plusieurs.
@@ -80,6 +93,14 @@ while [[ $# -gt 0 ]]; do
         *)              usage >&2; die "option inconnue : $1" ;;
     esac
 done
+
+if [[ "$VARIANT" == "release" ]]; then
+    PACKAGE="$PACKAGE_BASE"
+    VARIANT_LABEL="(prod)"
+else
+    PACKAGE="$PACKAGE_BASE.dev"
+    VARIANT_LABEL="(dev)"
+fi
 
 # --- adb --------------------------------------------------------------------
 
@@ -256,7 +277,7 @@ else
 fi
 
 if [[ $DO_BUILD -eq 1 ]]; then
-    info "Compilation ($VARIANT) : ./gradlew $GRADLE_TASK"
+    info "Compilation ${VARIANT_LABEL} : ./gradlew $GRADLE_TASK"
     (cd "$ROOT_DIR" && ./gradlew "$GRADLE_TASK")
 fi
 
@@ -274,10 +295,11 @@ APK="$(find_apk)" || die "aucun APK dans $APK_DIR. Relancez sans « --no-build �
 
 if [[ "$APK" == *-unsigned.apk ]]; then
     die "l'APK release n'est pas signé ($APK) et ne peut pas être installé. \
-Configurez une signingConfig dans app/build.gradle.kts, ou utilisez la variante debug."
+Renseignez un keystore.properties à la racine (voir README), ou installez la \
+version de développement en relançant sans « --release »."
 fi
 
-ok "APK : ${APK#"$ROOT_DIR"/} ($(du -h "$APK" | cut -f1))"
+ok "APK $VARIANT_LABEL : ${APK#"$ROOT_DIR"/} ($(du -h "$APK" | cut -f1))"
 
 # --- installation -----------------------------------------------------------
 
@@ -305,8 +327,8 @@ ok "Installée."
 # --- lancement --------------------------------------------------------------
 
 if [[ $DO_LAUNCH -eq 1 ]]; then
-    info "Lancement de $PACKAGE$ACTIVITY"
-    if ! adb_cmd shell am start -n "$PACKAGE/$PACKAGE$ACTIVITY" >/dev/null 2>&1; then
+    info "Lancement de $ACTIVITY ($PACKAGE)"
+    if ! adb_cmd shell am start -n "$PACKAGE/$ACTIVITY" >/dev/null 2>&1; then
         warn "impossible de lancer l'application automatiquement ; ouvrez-la depuis le téléphone."
     fi
 fi

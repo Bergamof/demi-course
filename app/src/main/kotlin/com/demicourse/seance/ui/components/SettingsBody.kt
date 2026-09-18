@@ -17,12 +17,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.demicourse.domain.PaceMode
 import com.demicourse.domain.PaceUnit
 import com.demicourse.domain.StepSpec
 import com.demicourse.domain.ThemeChoice
+import com.demicourse.seance.BuildConfig
 import com.demicourse.seance.ui.FieldKey
 import com.demicourse.seance.ui.Formatting
 import com.demicourse.seance.ui.SheetState
@@ -138,6 +140,16 @@ fun SettingsBody(
                 Text("+ Nouveau modèle", color = colors.muted, fontSize = 13.sp)
             }
         }
+
+        // Discret, tout en bas : « dev-2026.09.18-12.23 » pour un build de
+        // développement, « 2026.09.18-1 » pour une version publiée.
+        Text(
+            "Version ${BuildConfig.APP_VERSION_NAME}",
+            color = colors.muted3,
+            fontSize = 11.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+        )
     }
 }
 
