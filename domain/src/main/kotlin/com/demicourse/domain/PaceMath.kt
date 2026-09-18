@@ -2,7 +2,6 @@ package com.demicourse.domain
 
 import java.util.Locale
 import kotlin.math.abs
-import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -43,10 +42,26 @@ object PaceMath {
 
     private fun pad2(n: Int) = n.toString().padStart(2, '0')
 
-    /** Formats whole/fractional seconds back as "m.ss". */
-    fun formatSeconds(sec: Double): String {
+    /**
+     * Formats whole/fractional seconds for display as "3m02s", leaving out a part
+     * that is zero: "3m" rather than "3m00s", "1s" rather than "0m01s".
+     * (Input is still typed as mm.ss — this is display only.)
+     */
+    fun formatDuration(sec: Double): String {
         val t = sec.roundToInt()
-        return "${floor(t / 60.0).toInt()}.${pad2(t % 60)}"
+        val m = t / 60
+        val s = t % 60
+        return when {
+            m == 0 -> "${s}s"
+            s == 0 -> "${m}m"
+            else -> "${m}m${pad2(s)}s"
+        }
+    }
+
+    /** Formats a raw mm.ss field (a pace or a duration the user typed) for display; unparseable text is shown as typed. */
+    fun formatMmSsField(raw: String): String {
+        val parsed = parseMmSs(raw)
+        return if (parsed.ok) formatDuration(parsed.value!!.toDouble()) else raw.trim()
     }
 
     /** Formats a distance with two decimals, French locale (comma separator). */
@@ -133,7 +148,7 @@ object PaceMath {
         )
     }
 
-    /** Default display name for a step with no custom name: its length, e.g. "5 km" or "10.00 min". */
+    /** Default display name for a step with no custom name: its length, e.g. "5 km" or "10m". */
     fun autoName(step: StepSpec, unit: PaceUnit): String {
         if (step.name.isNotBlank()) return step.name
         return if (step.measure == Measure.DISTANCE) {
@@ -141,7 +156,7 @@ object PaceMath {
             if (!d.ok) "Étape" else formatDistance(d.value!!).replaceFirst(",00", "") + " " + unitDistanceLabel(unit)
         } else {
             val t = parseMmSs(step.value)
-            if (!t.ok) "Étape" else formatSeconds(t.value!!.toDouble()) + " min"
+            if (!t.ok) "Étape" else formatDuration(t.value!!.toDouble())
         }
     }
 }

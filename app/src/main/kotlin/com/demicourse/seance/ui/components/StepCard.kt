@@ -107,7 +107,7 @@ fun StepCard(
             ) {
                 Text("↩", color = colors.accent, fontSize = 14.sp)
                 Text(
-                    Formatting.turnaroundMarkerText(turn, stepCount, unit),
+                    Formatting.turnaroundMarkerText(turn, stepCount, unit, step.measure),
                     color = colors.accentFg, fontSize = 11.5.sp, lineHeight = 16.sp,
                     modifier = Modifier.weight(1f),
                 )

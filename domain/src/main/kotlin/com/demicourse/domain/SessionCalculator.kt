@@ -22,6 +22,13 @@ data class TurnPoint(
     /** How far into this particular segment the turnaround falls. */
     val intoDistance: Double,
     val intoTime: Double,
+    /**
+     * What is left of this particular segment once the turnaround point is passed —
+     * the end of that repetition's effort, or of that recovery phase, and nothing
+     * beyond it. The complement of [intoDistance] / [intoTime].
+     */
+    val restDistance: Double,
+    val restTime: Double,
 )
 
 data class SessionResult(
@@ -78,6 +85,7 @@ object SessionCalculator {
                     stepIndex = seg.stepIndex, rep = seg.rep, reps = seg.reps, kind = seg.kind,
                     distance = accDist + f * seg.distance, time = accTime + f * seg.time,
                     intoDistance = f * seg.distance, intoTime = f * seg.time,
+                    restDistance = (1 - f) * seg.distance, restTime = (1 - f) * seg.time,
                 )
                 break
             }

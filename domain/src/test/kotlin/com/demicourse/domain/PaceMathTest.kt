@@ -61,10 +61,26 @@ class PaceMathTest {
     }
 
     @Test
-    fun `formats seconds back to mm-ss`() {
-        assertEquals("1.30", PaceMath.formatSeconds(90.0))
-        assertEquals("10.00", PaceMath.formatSeconds(600.0))
-        assertEquals("2.01", PaceMath.formatSeconds(121.0))
+    fun `formats durations as XXmXXs and drops the zero parts`() {
+        assertEquals("1m30s", PaceMath.formatDuration(90.0))
+        assertEquals("3m02s", PaceMath.formatDuration(182.0))
+        assertEquals("10m", PaceMath.formatDuration(600.0))
+        assertEquals("2m01s", PaceMath.formatDuration(121.0))
+        assertEquals("1s", PaceMath.formatDuration(1.0))
+        assertEquals("59s", PaceMath.formatDuration(59.0))
+        assertEquals("0s", PaceMath.formatDuration(0.0))
+        // Fractional seconds round before splitting, so 119.6 s is 2m, not 1m60s.
+        assertEquals("2m", PaceMath.formatDuration(119.6))
+    }
+
+    @Test
+    fun `formats a raw mm-ss field for display`() {
+        assertEquals("3m02s", PaceMath.formatMmSsField("3.02"))
+        assertEquals("3m02s", PaceMath.formatMmSsField("3.2"))
+        assertEquals("9m", PaceMath.formatMmSsField("9.00"))
+        // Unparseable text is echoed as typed rather than swallowed.
+        assertEquals("abc", PaceMath.formatMmSsField(" abc "))
+        assertEquals("", PaceMath.formatMmSsField(""))
     }
 
     @Test
@@ -127,7 +143,7 @@ class PaceMathTest {
         val distStep = StepSpec(id = "s", measure = Measure.DISTANCE, value = "5")
         assertEquals("5 km", PaceMath.autoName(distStep, PaceUnit.MIN_PER_KM))
         val durStep = StepSpec(id = "s", measure = Measure.DURATION, value = "10.00")
-        assertEquals("10.00 min", PaceMath.autoName(durStep, PaceUnit.MIN_PER_KM))
+        assertEquals("10m", PaceMath.autoName(durStep, PaceUnit.MIN_PER_KM))
         val named = StepSpec(id = "s", name = "Custom", measure = Measure.DURATION, value = "10.00")
         assertEquals("Custom", PaceMath.autoName(named, PaceUnit.MIN_PER_KM))
     }
