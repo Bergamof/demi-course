@@ -53,9 +53,40 @@ Pour que l'APK publié soit installable, il doit être signé avec une clé stab
 Sans les secrets ci-dessous, la release est tout de même publiée mais l'APK n'est
 pas signé et Android refusera de l'installer ; les notes de release le signalent.
 
-### 1. Créer la clé de signature
+### 1. Créer la clé et poser les secrets
 
-Une seule fois, avec le `keytool` du JDK :
+```
+./scripts/setup-signing.sh
+```
+
+Le script crée `release.jks` (RSA 4096, PKCS12, mot de passe tiré au hasard),
+enregistre le mot de passe dans `keystore.properties` — les deux en lecture
+pour vous seul, et ignorés par git — puis pose les quatre secrets sur le dépôt
+via le CLI GitHub. Relancé alors que la clé existe, il la réutilise au lieu
+d'en fabriquer une autre.
+
+Prérequis : un JDK (pour `keytool`) et [`gh`](https://cli.github.com)
+authentifié (`gh auth login`) avec le droit d'écrire les secrets du dépôt.
+
+Options utiles :
+
+```
+./scripts/setup-signing.sh --secrets-only   # republie les secrets d'une clé existante
+./scripts/setup-signing.sh --no-secrets     # crée seulement la clé, sans toucher à GitHub
+./scripts/setup-signing.sh --ask-password   # choisir le mot de passe au lieu d'en tirer un
+./scripts/setup-signing.sh --help           # toutes les options
+```
+
+**Sauvegardez `release.jks` et `keystore.properties` hors du dépôt.** Cette clé
+est l'identité de l'application pour Android : la perdre signifie que les
+versions suivantes ne pourront plus être installées par-dessus celles déjà sur
+le téléphone — il faudra désinstaller puis réinstaller, en perdant les données.
+Pour la même raison, ne changez pas de clé d'une release à l'autre (le script
+refuse d'en remplacer une sans `--force` et une confirmation explicite).
+
+### 2. Ou à la main
+
+Sans `gh`, ou pour comprendre ce que fait le script :
 
 ```
 keytool -genkeypair -v \
@@ -65,46 +96,26 @@ keytool -genkeypair -v \
         -dname "CN=Demi Course"
 ```
 
-`keytool` demande un mot de passe. En PKCS12, le keystore et la clé partagent le
-même : `ANDROID_KEYSTORE_PASSWORD` et `ANDROID_KEY_PASSWORD` auront donc la même
-valeur. Ne passez pas le mot de passe en option (`-storepass`), il finirait dans
-l'historique du shell.
+`keytool` demande un mot de passe. En PKCS12, le keystore et la clé partagent
+le même : `ANDROID_KEYSTORE_PASSWORD` et `ANDROID_KEY_PASSWORD` auront donc la
+même valeur. Ne passez pas le mot de passe en option (`-storepass`), il
+finirait dans l'historique du shell.
 
-**Sauvegardez `release.jks` et son mot de passe ailleurs que dans le dépôt** (il
-est ignoré par git, et c'est voulu). Cette clé est l'identité de l'application
-pour Android : la perdre signifie que les versions suivantes ne pourront plus
-être installées par-dessus celles déjà sur le téléphone — il faudra désinstaller
-puis réinstaller, en perdant les données.
-
-### 2. Créer les secrets du dépôt
-
-Quatre secrets, dans Settings → Secrets and variables → Actions → New repository
-secret :
+Puis quatre secrets, dans Settings → Secrets and variables → Actions → New
+repository secret :
 
 | Secret                      | Valeur                                        |
 |-----------------------------|-----------------------------------------------|
 | `ANDROID_KEYSTORE_BASE64`   | la sortie de `base64 -w0 release.jks`         |
-| `ANDROID_KEYSTORE_PASSWORD` | le mot de passe choisi à l'étape 1            |
-| `ANDROID_KEY_ALIAS`         | `demi-course` (l'`-alias` de l'étape 1)       |
+| `ANDROID_KEYSTORE_PASSWORD` | le mot de passe choisi ci-dessus              |
+| `ANDROID_KEY_ALIAS`         | `demi-course` (l'`-alias` ci-dessus)          |
 | `ANDROID_KEY_PASSWORD`      | le même mot de passe                          |
-
-Ou en ligne de commande, avec le [CLI GitHub](https://cli.github.com) :
-
-```
-base64 -w0 release.jks | gh secret set ANDROID_KEYSTORE_BASE64
-gh secret set ANDROID_KEYSTORE_PASSWORD      # demande la valeur, sans l'afficher
-gh secret set ANDROID_KEY_ALIAS --body demi-course
-gh secret set ANDROID_KEY_PASSWORD
-```
-
-Le prochain merge sur `main` publiera un APK signé. Gardez la même clé d'une
-release à l'autre : une signature qui change et c'est la mise à jour que le
-téléphone rejette.
 
 ### 3. Signer un build de prod en local (facultatif)
 
-Pour `./scripts/deploy.sh --release`, mettez les mêmes valeurs dans un
-`keystore.properties` à la racine (ignoré par git) :
+`./scripts/deploy.sh --release` lit le `keystore.properties` que le script a
+écrit ; rien de plus à faire. En partant d'une clé existante, écrivez-le
+vous-même à la racine :
 
 ```
 storeFile=/chemin/vers/release.jks
