@@ -1,6 +1,5 @@
 package com.demicourse.seance.ui
 
-import com.demicourse.domain.HalfBy
 import com.demicourse.domain.Measure
 import com.demicourse.domain.PaceMath
 import com.demicourse.domain.PaceMath.formatDistance
@@ -48,17 +47,20 @@ object Formatting {
         return "≈ $dist $uD  ·  $dur"
     }
 
-    fun turnaroundMarkerText(turn: TurnPoint, stepCount: Int, unit: PaceUnit, halfBy: HalfBy): String {
+    /**
+     * The turnaround marker on a step card. [measure] is the step's own measure: what is left
+     * of the effort or recovery in progress is expressed the way that segment is *set* — a
+     * recovery is always a duration, an effort follows its step — so the figure always matches
+     * what the runner reads off a watch, and is the exact value rather than one derived from
+     * the pace (a distance-measured step has an exact distance, a duration-measured one an
+     * exact time).
+     */
+    fun turnaroundMarkerText(turn: TurnPoint, stepCount: Int, unit: PaceUnit, measure: Measure): String {
         val repSuffix = if (turn.reps > 1) " de la répétition ${turn.rep} sur ${turn.reps}" else ""
         val where = if (turn.kind == SegmentKind.REC) "pendant la récupération$repSuffix" else "pendant l’effort$repSuffix"
         val uD = PaceMath.unitDistanceLabel(unit)
-        // What is left of the effort or recovery being run, in whatever the demi-tour
-        // is based on (the halfBy setting) — the figure to check against a watch.
-        val rest = if (halfBy == HalfBy.DURATION) {
-            formatDuration(turn.restTime)
-        } else {
-            "${formatDistance(turn.restDistance)} $uD"
-        }
+        val byTime = turn.kind == SegmentKind.REC || measure == Measure.DURATION
+        val rest = if (byTime) formatDuration(turn.restTime) else "${formatDistance(turn.restDistance)} $uD"
         val restScope = when {
             turn.kind == SegmentKind.REC -> "dans la récupération"
             turn.reps > 1 -> "dans la répétition"

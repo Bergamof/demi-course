@@ -23,7 +23,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.demicourse.domain.HalfBy
 import com.demicourse.domain.PaceUnit
 import com.demicourse.domain.StepSpec
 import com.demicourse.domain.TurnPoint
@@ -38,7 +37,6 @@ fun StepCard(
     unit: PaceUnit,
     turn: TurnPoint?,
     stepCount: Int,
-    halfBy: HalfBy,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
@@ -109,7 +107,7 @@ fun StepCard(
             ) {
                 Text("↩", color = colors.accent, fontSize = 14.sp)
                 Text(
-                    Formatting.turnaroundMarkerText(turn, stepCount, unit, halfBy),
+                    Formatting.turnaroundMarkerText(turn, stepCount, unit, step.measure),
                     color = colors.accentFg, fontSize = 11.5.sp, lineHeight = 16.sp,
                     modifier = Modifier.weight(1f),
                 )
