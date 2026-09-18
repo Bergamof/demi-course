@@ -36,8 +36,13 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      # The action's default package set still includes `tools`, which no longer
+      # exists in the SDK repository and fails the whole step, so the packages
+      # compileSdk 35 needs are spelled out.
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: "platform-tools platforms;android-35 build-tools;35.0.0"
 
       - name: Compute version
         id: version
