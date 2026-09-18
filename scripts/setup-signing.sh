@@ -211,6 +211,8 @@ avec la nouvelle clé (il faudra désinstaller puis réinstaller, en perdant les
         else
             PASSWORD="$(generate_password)"
             [[ ${#PASSWORD} -ge 24 ]] || die "génération du mot de passe impossible. Relancez avec « --ask-password »."
+            info "Mot de passe tiré au hasard — rien à saisir, rien à retenir : il est \
+enregistré dans keystore.properties (« --ask-password » pour le choisir vous-même)."
         fi
 
         info "Création de la clé (RSA 4096, valable 10 000 jours)"
@@ -260,9 +262,16 @@ encode_base64() {
 }
 
 set_secret() {
-    local name="$1" value="$2"
-    printf '%s' "$value" | gh secret set "$name" --repo "$REPO" >/dev/null
-    ok "$name"
+    local name="$1" value="$2" output
+    [[ -n "$value" ]] || die "valeur vide pour $name : rien n'a été publié."
+    # La sortie de gh est gardée pour la montrer en cas d'échec : un « HTTP 403 »
+    # ou un scope manquant doit se voir, pas disparaître dans /dev/null.
+    if ! output="$(printf '%s' "$value" | gh secret set "$name" --repo "$REPO" 2>&1)"; then
+        [[ -n "$output" ]] && printf '%s\n' "$output" >&2
+        die "échec de la publication de $name. Si gh parle d'autorisation, \
+« gh auth refresh -h github.com -s repo » donne au jeton le droit d'écrire les secrets."
+    fi
+    ok "$name (${#value} caractères)"
 }
 
 info "Dépôt cible : $REPO"
@@ -285,6 +294,20 @@ set_secret ANDROID_KEYSTORE_BASE64   "$(encode_base64 "$KEYSTORE")"
 set_secret ANDROID_KEYSTORE_PASSWORD "$PASSWORD"
 set_secret ANDROID_KEY_ALIAS         "$ALIAS"
 set_secret ANDROID_KEY_PASSWORD      "$PASSWORD"
+
+info "Vérification"
+published="$(gh secret list --repo "$REPO" 2>/dev/null | awk '{ print $1 }' || true)"
+missing=()
+for name in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+    grep -qx "$name" <<<"$published" || missing+=("$name")
+done
+if [[ ${#missing[@]} -gt 0 ]]; then
+    die "absents de la liste des secrets de $REPO : ${missing[*]}. \
+Vérifiez le dépôt visé et les droits du jeton (« gh auth status »)."
+fi
+ok "les quatre secrets sont bien enregistrés sur $REPO"
+printf '%s  GitHub n'"'"'affiche jamais la valeur d'"'"'un secret, seulement son nom et sa date.%s\n' \
+    "$C_DIM" "$C_RESET"
 
 cat <<EOF
 
