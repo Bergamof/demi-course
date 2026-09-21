@@ -1,11 +1,16 @@
 package com.demicourse.seance.ui.components
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -22,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -37,12 +43,17 @@ import androidx.compose.ui.unit.sp
 import com.demicourse.seance.ui.FieldKey
 import com.demicourse.seance.ui.SheetState
 import com.demicourse.seance.ui.theme.LocalSeanceColors
+import kotlinx.coroutines.delay
 
 /**
  * A single editor input, styled as the prototype's bordered field boxes (not Material's
  * outlined/filled chrome), wired into a [SheetFocusController] for the Tab/Enter focus chain
  * and the open/advance "select all" behavior.
+ *
+ * A focused field also keeps itself inside the sheet's scroll viewport, so a field low in the
+ * editor isn't left hidden behind the soft keyboard.
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SeanceTextField(
     controller: SheetFocusController,
@@ -73,6 +84,20 @@ fun SeanceTextField(
         }
     }
 
+    // The soft keyboard shrinks the sheet's scroll viewport (see `imePadding` in BottomSheetHost),
+    // which can leave an already-focused field below the fold. Reading the IME inset here
+    // re-runs the effect on every frame of the keyboard animation, so the request fires once the
+    // keyboard has settled rather than mid-slide.
+    val bringIntoView = remember { BringIntoViewRequester() }
+    var focused by remember(controller, field) { mutableStateOf(false) }
+    val imeBottom = WindowInsets.ime.getBottom(LocalDensity.current)
+    LaunchedEffect(focused, imeBottom) {
+        if (focused) {
+            delay(60)
+            bringIntoView.bringIntoView()
+        }
+    }
+
     val fontFamily = if (monospace) FontFamily.Monospace else FontFamily.Default
     val style = TextStyle(color = colors.fg, fontSize = fontSize, fontFamily = fontFamily, textAlign = textAlign)
 
@@ -85,7 +110,11 @@ fun SeanceTextField(
             },
             modifier = Modifier
                 .focusRequester(controller.requesterFor(field))
-                .onFocusChanged { if (it.isFocused) controller.focusedField = field }
+                .bringIntoViewRequester(bringIntoView)
+                .onFocusChanged {
+                    focused = it.isFocused
+                    if (it.isFocused) controller.focusedField = field
+                }
                 .fillMaxWidth(),
             singleLine = true,
             textStyle = style,

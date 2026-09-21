@@ -9,9 +9,12 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -79,9 +82,15 @@ fun BottomSheetHost(
             )
         },
     ) {
+        // The body scrolls: with recovery (or a pace range) open the editor is taller than the
+        // sheet, and the footer buttons would otherwise be unreachable. `imePadding()` sits
+        // outside the scroll so the soft keyboard shrinks the viewport instead of covering it,
+        // which is also what lets a focused field's cursor be scrolled into view.
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .imePadding()
+                .verticalScroll(rememberScrollState())
                 .padding(start = 16.dp, end = 16.dp, bottom = 18.dp)
                 .onPreviewKeyEvent { event ->
                     controller.handleKeyEvent(event, sheet, onSubmit = { viewModel.submit() }, onClose = ::close)
