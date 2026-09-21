@@ -44,7 +44,6 @@ fun BottomSheetHost(
     templates: List<StepSpec>,
     unit: PaceUnit,
     themeChoice: ThemeChoice,
-    hintsOn: Boolean,
     viewModel: SeanceViewModel,
 ) {
     val colors = LocalSeanceColors.current
@@ -162,8 +161,6 @@ fun BottomSheetHost(
                 cancelLabel = "Annuler", submitLabel = submitLabel(sheet),
                 onCancel = ::close, onSubmit = { viewModel.submit() },
             )
-
-            HintsRow(visible = hintsOn)
         }
     }
 }

@@ -54,7 +54,6 @@ data class AppSettings(
     val theme: ThemeChoice = ThemeChoice.SYSTEM,
     val unit: PaceUnit = PaceUnit.MIN_PER_KM,
     val halfBy: HalfBy = HalfBy.DISTANCE,
-    val showHints: Boolean = true,
     val recovery: RecoveryDefaults = RecoveryDefaults(),
 )
 
