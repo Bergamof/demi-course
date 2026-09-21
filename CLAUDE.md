@@ -21,6 +21,12 @@ It was ported from a Claude Design HTML/JS prototype. The original design bundle
 
 There is no linter configured (no ktlint/detekt).
 
+## Git conventions
+
+- **Branch names say what the work is**: `claude/<sujet-en-quelques-mots>` — e.g. `claude/scroll-feuille-edition`, not a generated codename like `claude/laughing-cori-08wxn8`. Keep the `claude/` prefix so agent branches stay grouped; rename an auto-generated branch before the first push.
+- Commit messages are in French, present indicative third person, matching the existing history (`Ajoute un script…`, `Fixe les paquets…`).
+- **One session, at most one PR** unless asked otherwise. A second topic raised mid-session goes on the same branch as another commit and widens that PR's title — it does not get a branch and a PR of its own. Pick a branch name broad enough for the session's subject when more work is likely.
+
 ## Variants and versioning
 
 `app/build.gradle.kts` computes both version names at configuration time; nothing is hardcoded.

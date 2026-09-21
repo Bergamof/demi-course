@@ -153,25 +153,3 @@ fun FieldBox(
         content = content,
     )
 }
-
-@Composable
-fun HintsRow(visible: Boolean) {
-    if (!visible) return
-    val colors = LocalSeanceColors.current
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
-    ) {
-        listOf("Tab / ⏎ champ suivant", "Ctrl+⏎ valider", "Échap fermer").forEach { hint ->
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(7.dp))
-                    .background(colors.field)
-                    .border(1.dp, colors.line, RoundedCornerShape(7.dp))
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
-            ) {
-                Text(hint, color = colors.muted3, fontSize = 11.sp)
-            }
-        }
-    }
-}

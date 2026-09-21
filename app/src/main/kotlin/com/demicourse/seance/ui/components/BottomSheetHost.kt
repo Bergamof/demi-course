@@ -9,9 +9,12 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -44,7 +47,6 @@ fun BottomSheetHost(
     templates: List<StepSpec>,
     unit: PaceUnit,
     themeChoice: ThemeChoice,
-    hintsOn: Boolean,
     viewModel: SeanceViewModel,
 ) {
     val colors = LocalSeanceColors.current
@@ -79,9 +81,15 @@ fun BottomSheetHost(
             )
         },
     ) {
+        // The body scrolls: with recovery (or a pace range) open the editor is taller than the
+        // sheet, and the footer buttons would otherwise be unreachable. `imePadding()` sits
+        // outside the scroll so the soft keyboard shrinks the viewport instead of covering it,
+        // which is also what lets a focused field's cursor be scrolled into view.
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .imePadding()
+                .verticalScroll(rememberScrollState())
                 .padding(start = 16.dp, end = 16.dp, bottom = 18.dp)
                 .onPreviewKeyEvent { event ->
                     controller.handleKeyEvent(event, sheet, onSubmit = { viewModel.submit() }, onClose = ::close)
@@ -162,8 +170,6 @@ fun BottomSheetHost(
                 cancelLabel = "Annuler", submitLabel = submitLabel(sheet),
                 onCancel = ::close, onSubmit = { viewModel.submit() },
             )
-
-            HintsRow(visible = hintsOn)
         }
     }
 }
@@ -174,7 +180,12 @@ private fun TemplatePicker(templates: List<StepSpec>, unit: PaceUnit, onPick: (S
     val colors = LocalSeanceColors.current
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionLabel("Modèle")
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            // Without this the wrapped rows of chips touch, and two templates on
+            // consecutive lines read as one block.
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             templates.forEach { tpl ->
                 androidx.compose.foundation.layout.Row(
                     modifier = Modifier
