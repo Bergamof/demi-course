@@ -119,7 +119,7 @@ fun SeanceScreen(viewModel: SeanceViewModel) {
         state.sheet?.let { sheet ->
             BottomSheetHost(
                 sheet = sheet, templates = state.templates, unit = state.settings.unit,
-                themeChoice = state.settings.theme, hintsOn = state.settings.showHints, viewModel = viewModel,
+                themeChoice = state.settings.theme, viewModel = viewModel,
             )
         }
     }
