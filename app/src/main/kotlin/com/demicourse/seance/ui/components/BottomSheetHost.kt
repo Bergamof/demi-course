@@ -180,7 +180,12 @@ private fun TemplatePicker(templates: List<StepSpec>, unit: PaceUnit, onPick: (S
     val colors = LocalSeanceColors.current
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionLabel("Modèle")
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            // Without this the wrapped rows of chips touch, and two templates on
+            // consecutive lines read as one block.
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             templates.forEach { tpl ->
                 androidx.compose.foundation.layout.Row(
                     modifier = Modifier
