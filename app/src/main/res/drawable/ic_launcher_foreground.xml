@@ -1,17 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "Piste": a running track seen in perspective. The first half of the lap is lit
+     (accent → accentFg), the second half stays dim, and the marker sits on the
+     halfway point. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Turnaround dot -->
-    <path
-        android:fillColor="#5aa06b"
-        android:pathData="M54,26 A28,28 0 1,1 53.99,26 Z" />
-    <!-- U-turn arrow glyph -->
-    <path
-        android:strokeColor="#f1efe4"
-        android:strokeWidth="4"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:pathData="M42,60 L42,48 A12,12 0 0,1 54,36 L64,36 M64,36 L57,29 M64,36 L57,43" />
+    <group
+        android:pivotX="54"
+        android:pivotY="56"
+        android:rotation="-20">
+        <!-- Inner lane -->
+        <path
+            android:pathData="M34,56 A20,8 0 1,0 74,56 A20,8 0 1,0 34,56 Z"
+            android:strokeColor="#3a3930"
+            android:strokeWidth="2" />
+        <!-- Second half of the lap -->
+        <path
+            android:pathData="M84,56 A30,16 0 0,1 24,56"
+            android:strokeColor="#3a3930"
+            android:strokeLineCap="round"
+            android:strokeWidth="7" />
+        <!-- First half of the lap -->
+        <path
+            android:pathData="M24,56 A30,16 0 0,1 84,56"
+            android:strokeLineCap="round"
+            android:strokeWidth="7">
+            <aapt:attr name="android:strokeColor">
+                <gradient
+                    android:type="linear"
+                    android:startX="24"
+                    android:startY="0"
+                    android:endX="84"
+                    android:endY="0"
+                    android:startColor="#5aa06b"
+                    android:endColor="#8fc79c" />
+            </aapt:attr>
+        </path>
+        <!-- Halfway marker -->
+        <path
+            android:fillColor="#f1efe4"
+            android:pathData="M78,56 A6,6 0 1,0 90,56 A6,6 0 1,0 78,56 Z"
+            android:strokeColor="#191812"
+            android:strokeWidth="3" />
+    </group>
 </vector>
