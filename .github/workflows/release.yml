@@ -7,8 +7,7 @@ name: Release
 on:
   workflow_dispatch:
 
-permissions:
-  contents: write
+permissions: {}
 
 # Two triggers close together would compute the same rank if they ran in
 # parallel, so they are serialized.
@@ -22,27 +21,30 @@ jobs:
     # the "Run workflow" form.
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           # The existing tags give the day's rank, and the history gives the
           # commits this release contains.
           fetch-depth: 0
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+      - name: Set up JDK
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: temurin
-          java-version: "17"
+          java-version-file: .sdkmanrc
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
 
       # The action's default package set still includes `tools`, which no longer
       # exists in the SDK repository and fails the whole step, so the packages
       # compileSdk 35 needs are spelled out.
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
         with:
           packages: "platform-tools platforms;android-35 build-tools;35.0.0"
 
@@ -101,20 +103,25 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          VERSION: ${{ steps.version.outputs.version }}
+          VERSION_CODE: ${{ steps.version.outputs.version_code }}
         run: |
           ./gradlew :app:assembleRelease \
-            -PappVersionName="${{ steps.version.outputs.version }}" \
-            -PappVersionCode="${{ steps.version.outputs.version_code }}"
+            -PappVersionName="$VERSION" \
+            -PappVersionCode="$VERSION_CODE"
 
       - name: Collect APK
         id: apk
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
           set -euo pipefail
           src="$(find app/build/outputs/apk/release -maxdepth 1 -name '*.apk' -print -quit)"
           [[ -n "$src" ]] || { echo "::error::no APK was produced." >&2; exit 1; }
-          dest="${RUNNER_TEMP}/demi-course-${{ steps.version.outputs.version }}.apk"
+          dest="${RUNNER_TEMP}/demi-course-${VERSION}.apk"
           cp "$src" "$dest"
           echo "path=$dest" >> "$GITHUB_OUTPUT"
+          (cd "$RUNNER_TEMP" && sha256sum "$(basename "$dest")" > "$(basename "$dest").sha256")
           ls -l "$dest"
 
       - name: Publish GitHub release
@@ -123,6 +130,7 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
           APK: ${{ steps.apk.outputs.path }}
           SIGNED: ${{ steps.keystore.outputs.signed }}
+          VERSION_CODE: ${{ steps.version.outputs.version_code }}
         run: |
           set -euo pipefail
           notes="$(mktemp)"
@@ -133,7 +141,7 @@ jobs:
                       | grep -E '^[0-9]{4}\.[0-9]{2}\.[0-9]{2}-[0-9]+$' \
                       | head -1 || true)"
           {
-            echo "Version \`${VERSION}\` (versionCode ${{ steps.version.outputs.version_code }})."
+            echo "Version \`${VERSION}\` (versionCode ${VERSION_CODE})."
             echo
             echo "### Changements"
             echo
@@ -150,4 +158,4 @@ jobs:
             --title "$VERSION" \
             --notes-file "$notes" \
             --target "$GITHUB_SHA" \
-            "$APK"
+            "$APK" "$APK.sha256"

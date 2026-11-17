@@ -25,8 +25,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.demicourse.domain.PaceUnit
@@ -72,12 +72,13 @@ fun BottomSheetHost(
         contentColor = colors.fg,
         dragHandle = {
             Box(
-                modifier = Modifier
-                    .padding(top = 10.dp)
-                    .width(34.dp)
-                    .height(4.dp)
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(colors.line2),
+                modifier =
+                    Modifier
+                        .padding(top = 10.dp)
+                        .width(34.dp)
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(colors.line2),
             )
         },
     ) {
@@ -86,20 +87,23 @@ fun BottomSheetHost(
         // outside the scroll so the soft keyboard shrinks the viewport instead of covering it,
         // which is also what lets a focused field's cursor be scrolled into view.
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .imePadding()
-                .verticalScroll(rememberScrollState())
-                .padding(start = 16.dp, end = 16.dp, bottom = 18.dp)
-                .onPreviewKeyEvent { event ->
-                    controller.handleKeyEvent(event, sheet, onSubmit = { viewModel.submit() }, onClose = ::close)
-                },
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .imePadding()
+                    .verticalScroll(rememberScrollState())
+                    .padding(start = 16.dp, end = 16.dp, bottom = 18.dp)
+                    .onPreviewKeyEvent { event ->
+                        controller.handleKeyEvent(event, sheet, onSubmit = { viewModel.submit() }, onClose = ::close)
+                    },
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             SheetHeader(title = sheetTitle(sheet), onClose = ::close)
 
             if (sheet.type == SheetType.STEP && sheet.editingStepId == null) {
-                TemplatePicker(templates = templates, unit = unit, onPick = viewModel::applyTemplate, onNew = { viewModel.openTemplateSheet() })
+                TemplatePicker(templates = templates, unit = unit, onPick = viewModel::applyTemplate, onNew = {
+                    viewModel.openTemplateSheet()
+                })
             }
 
             if (sheet.type == SheetType.TEMPLATE) {
@@ -107,9 +111,16 @@ fun BottomSheetHost(
                     SectionLabel("Nom du modèle")
                     FieldBox {
                         SeanceTextField(
-                            controller = controller, field = FieldKey.TEMPLATE_NAME, sheet = sheet, value = sheet.draft.templateName,
-                            onValueChange = { viewModel.setField(FieldKey.TEMPLATE_NAME, it) }, onSubmit = { viewModel.submit() },
-                            placeholder = "Fractionné 400 m", boxed = false, monospace = false, fontSize = 16.sp,
+                            controller = controller,
+                            field = FieldKey.TEMPLATE_NAME,
+                            sheet = sheet,
+                            value = sheet.draft.templateName,
+                            onValueChange = { viewModel.setField(FieldKey.TEMPLATE_NAME, it) },
+                            onSubmit = { viewModel.submit() },
+                            placeholder = "Fractionné 400 m",
+                            boxed = false,
+                            monospace = false,
+                            fontSize = 16.sp,
                             keyboardType = KeyboardType.Text,
                             modifier = Modifier.weight(1f),
                         )
@@ -120,7 +131,9 @@ fun BottomSheetHost(
 
             if (sheet.type == SheetType.STEP || sheet.type == SheetType.TEMPLATE) {
                 EditorBody(
-                    controller = controller, sheet = sheet, unit = unit,
+                    controller = controller,
+                    sheet = sheet,
+                    unit = unit,
                     onField = viewModel::setField,
                     onSetMeasureDistance = viewModel::setMeasureDistance,
                     onSetMeasureDuration = viewModel::setMeasureDuration,
@@ -137,7 +150,11 @@ fun BottomSheetHost(
 
             if (sheet.type == SheetType.SETTINGS) {
                 SettingsBody(
-                    controller = controller, sheet = sheet, unit = unit, themeChoice = themeChoice, templates = templates,
+                    controller = controller,
+                    sheet = sheet,
+                    unit = unit,
+                    themeChoice = themeChoice,
+                    templates = templates,
                     onSetTheme = viewModel::setTheme,
                     onField = viewModel::setField,
                     onSetRecSingle = viewModel::setRecSingle,
@@ -151,13 +168,24 @@ fun BottomSheetHost(
 
             if (sheet.type == SheetType.STEP) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    CheckRow(checked = sheet.draft.saveTemplate, label = "Enregistrer comme modèle", onToggle = viewModel::toggleSaveTemplate)
+                    CheckRow(
+                        checked = sheet.draft.saveTemplate,
+                        label = "Enregistrer comme modèle",
+                        onToggle = viewModel::toggleSaveTemplate,
+                    )
                     if (sheet.draft.saveTemplate) {
                         FieldBox(height = 46.dp) {
                             SeanceTextField(
-                                controller = controller, field = FieldKey.TEMPLATE_NAME, sheet = sheet, value = sheet.draft.templateName,
-                                onValueChange = { viewModel.setField(FieldKey.TEMPLATE_NAME, it) }, onSubmit = { viewModel.submit() },
-                                placeholder = "Nom du modèle", boxed = false, monospace = false, fontSize = 15.sp,
+                                controller = controller,
+                                field = FieldKey.TEMPLATE_NAME,
+                                sheet = sheet,
+                                value = sheet.draft.templateName,
+                                onValueChange = { viewModel.setField(FieldKey.TEMPLATE_NAME, it) },
+                                onSubmit = { viewModel.submit() },
+                                placeholder = "Nom du modèle",
+                                boxed = false,
+                                monospace = false,
+                                fontSize = 15.sp,
                                 keyboardType = KeyboardType.Text,
                                 modifier = Modifier.weight(1f),
                             )
@@ -167,8 +195,10 @@ fun BottomSheetHost(
             }
 
             FooterButtons(
-                cancelLabel = "Annuler", submitLabel = submitLabel(sheet),
-                onCancel = ::close, onSubmit = { viewModel.submit() },
+                cancelLabel = "Annuler",
+                submitLabel = submitLabel(sheet),
+                onCancel = ::close,
+                onSubmit = { viewModel.submit() },
             )
         }
     }
@@ -176,7 +206,12 @@ fun BottomSheetHost(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun TemplatePicker(templates: List<StepSpec>, unit: PaceUnit, onPick: (StepSpec) -> Unit, onNew: () -> Unit) {
+private fun TemplatePicker(
+    templates: List<StepSpec>,
+    unit: PaceUnit,
+    onPick: (StepSpec) -> Unit,
+    onNew: () -> Unit,
+) {
     val colors = LocalSeanceColors.current
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SectionLabel("Modèle")
@@ -188,26 +223,31 @@ private fun TemplatePicker(templates: List<StepSpec>, unit: PaceUnit, onPick: (S
         ) {
             templates.forEach { tpl ->
                 androidx.compose.foundation.layout.Row(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(colors.surface2)
-                        .clickable { onPick(tpl) }
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    modifier =
+                        Modifier
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(colors.surface2)
+                            .clickable { onPick(tpl) }
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(tpl.name, color = colors.fg2, fontSize = 13.sp)
                     Text(
-                        com.demicourse.seance.ui.Formatting.templateHint(tpl, unit),
-                        color = colors.muted2, fontSize = 11.sp, fontFamily = FontFamily.Monospace,
+                        com.demicourse.seance.ui.Formatting
+                            .templateHint(tpl, unit),
+                        color = colors.muted2,
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace,
                     )
                 }
             }
             Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(10.dp))
-                    .dashedBorder(colors.dash, 10.dp)
-                    .clickable(onClick = onNew)
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                modifier =
+                    Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                        .dashedBorder(colors.dash, 10.dp)
+                        .clickable(onClick = onNew)
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
             ) {
                 Text("+ Nouveau modèle", color = colors.muted, fontSize = 13.sp)
             }
@@ -215,14 +255,16 @@ private fun TemplatePicker(templates: List<StepSpec>, unit: PaceUnit, onPick: (S
     }
 }
 
-private fun sheetTitle(sheet: SheetState): String = when (sheet.type) {
-    SheetType.SETTINGS -> "Paramètres"
-    SheetType.TEMPLATE -> if (sheet.editingTemplateId != null) "Modifier le modèle" else "Nouveau modèle"
-    SheetType.STEP -> if (sheet.editingStepId != null) "Modifier l’étape" else "Nouvelle étape"
-}
+private fun sheetTitle(sheet: SheetState): String =
+    when (sheet.type) {
+        SheetType.SETTINGS -> "Paramètres"
+        SheetType.TEMPLATE -> if (sheet.editingTemplateId != null) "Modifier le modèle" else "Nouveau modèle"
+        SheetType.STEP -> if (sheet.editingStepId != null) "Modifier l’étape" else "Nouvelle étape"
+    }
 
-private fun submitLabel(sheet: SheetState): String = when (sheet.type) {
-    SheetType.SETTINGS -> "Enregistrer"
-    SheetType.TEMPLATE -> if (sheet.editingTemplateId != null) "Enregistrer" else "Créer le modèle"
-    SheetType.STEP -> if (sheet.editingStepId != null) "Enregistrer" else "Ajouter"
-}
+private fun submitLabel(sheet: SheetState): String =
+    when (sheet.type) {
+        SheetType.SETTINGS -> "Enregistrer"
+        SheetType.TEMPLATE -> if (sheet.editingTemplateId != null) "Enregistrer" else "Créer le modèle"
+        SheetType.STEP -> if (sheet.editingStepId != null) "Enregistrer" else "Ajouter"
+    }

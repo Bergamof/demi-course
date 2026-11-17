@@ -8,8 +8,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,45 +23,81 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.demicourse.seance.ui.theme.LocalSeanceColors
 
+/** Smallest touch target Android recommends, whatever the size of what is drawn inside. */
+val MIN_TOUCH_TARGET = 48.dp
+
 /** A dashed rounded-rect border, matching the prototype's `border:1px dashed var(--dash)` accents. */
-fun Modifier.dashedBorder(color: Color, cornerRadius: Dp, strokeWidth: Dp = 1.dp): Modifier = this.drawBehind {
-    drawRoundRect(
-        color = color,
-        cornerRadius = CornerRadius(cornerRadius.toPx(), cornerRadius.toPx()),
-        style = Stroke(width = strokeWidth.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(4f, 4f))),
-    )
-}
+fun Modifier.dashedBorder(
+    color: Color,
+    cornerRadius: Dp,
+    strokeWidth: Dp = 1.dp,
+): Modifier =
+    this.drawBehind {
+        drawRoundRect(
+            color = color,
+            cornerRadius = CornerRadius(cornerRadius.toPx(), cornerRadius.toPx()),
+            style = Stroke(width = strokeWidth.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(4f, 4f))),
+        )
+    }
 
 @Composable
-fun SheetHeader(title: String, onClose: () -> Unit) {
+fun SheetHeader(
+    title: String,
+    onClose: () -> Unit,
+) {
     val colors = LocalSeanceColors.current
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(title, color = colors.fg, fontSize = 19.sp, fontWeight = FontWeight.SemiBold)
+        Text(
+            title,
+            color = colors.fg,
+            fontSize = 19.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.semantics { heading() },
+        )
+        // The visible disc stays small; the touch target around it is the 48 dp Android asks for.
         Box(
-            modifier = Modifier
-                .size(30.dp)
-                .clip(RoundedCornerShape(15.dp))
-                .background(colors.surface2)
-                .clickable(onClick = onClose),
+            modifier =
+                Modifier
+                    .size(MIN_TOUCH_TARGET)
+                    .clickable(onClickLabel = "Fermer", role = Role.Button, onClick = onClose),
             contentAlignment = Alignment.Center,
         ) {
-            Text("×", color = colors.muted, fontSize = 16.sp)
+            Box(
+                modifier =
+                    Modifier
+                        .size(30.dp)
+                        .clip(RoundedCornerShape(15.dp))
+                        .background(colors.surface2)
+                        .clearAndSetSemantics {},
+                contentAlignment = Alignment.Center,
+            ) {
+                Text("×", color = colors.muted, fontSize = 16.sp)
+            }
         }
     }
 }
 
 @Composable
-fun SectionLabel(text: String, suffix: String = "") {
+fun SectionLabel(
+    text: String,
+    suffix: String = "",
+) {
     val colors = LocalSeanceColors.current
     Row {
         Text(text.uppercase(), color = colors.muted, fontSize = 11.sp, letterSpacing = 1.1.sp)
@@ -73,54 +111,83 @@ fun SectionLabel(text: String, suffix: String = "") {
 fun FieldError(message: String?) {
     if (!message.isNullOrEmpty()) {
         val colors = LocalSeanceColors.current
-        Text(message, color = colors.danger, fontSize = 12.sp)
+        Text(
+            message,
+            color = colors.danger,
+            fontSize = 12.sp,
+            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+        )
     }
 }
 
 @Composable
-fun CheckRow(checked: Boolean, label: String, onToggle: () -> Unit, modifier: Modifier = Modifier) {
+fun CheckRow(
+    checked: Boolean,
+    label: String,
+    onToggle: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val colors = LocalSeanceColors.current
     Row(
-        modifier = modifier.clickable(onClick = onToggle),
+        modifier =
+            modifier
+                .heightIn(min = MIN_TOUCH_TARGET)
+                .toggleable(value = checked, role = Role.Checkbox, onValueChange = { onToggle() }),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            modifier = Modifier
-                .size(20.dp)
-                .clip(RoundedCornerShape(6.dp))
-                .background(if (checked) colors.accent else Color.Transparent)
-                .border(1.dp, colors.line2, RoundedCornerShape(6.dp)),
+            modifier =
+                Modifier
+                    .size(20.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(if (checked) colors.accent else Color.Transparent)
+                    .border(1.dp, colors.line2, RoundedCornerShape(6.dp)),
             contentAlignment = Alignment.Center,
         ) {
-            if (checked) Text("✓", color = colors.onAccent, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+            if (checked) {
+                Text(
+                    "✓",
+                    color = colors.onAccent,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clearAndSetSemantics {},
+                )
+            }
         }
         Text(label, color = colors.fg3, fontSize = 13.5.sp)
     }
 }
 
 @Composable
-fun FooterButtons(cancelLabel: String, submitLabel: String, onCancel: () -> Unit, onSubmit: () -> Unit) {
+fun FooterButtons(
+    cancelLabel: String,
+    submitLabel: String,
+    onCancel: () -> Unit,
+    onSubmit: () -> Unit,
+) {
     val colors = LocalSeanceColors.current
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         Box(
-            modifier = Modifier
-                .weight(1f)
-                .height(50.dp)
-                .clip(RoundedCornerShape(14.dp))
-                .border(1.dp, colors.line2, RoundedCornerShape(14.dp))
-                .clickable(onClick = onCancel),
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .heightIn(min = 50.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .border(1.dp, colors.line2, RoundedCornerShape(14.dp))
+                    .clickable(role = Role.Button, onClick = onCancel),
             contentAlignment = Alignment.Center,
         ) {
             Text(cancelLabel, color = colors.fg3, fontSize = 15.sp)
         }
         Box(
-            modifier = Modifier
-                .weight(1.6f)
-                .height(50.dp)
-                .clip(RoundedCornerShape(14.dp))
-                .background(colors.accent)
-                .clickable(onClick = onSubmit),
+            modifier =
+                Modifier
+                    .weight(1.6f)
+                    .heightIn(min = 50.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(colors.accent)
+                    .clickable(role = Role.Button, onClick = onSubmit),
             contentAlignment = Alignment.Center,
         ) {
             Text(submitLabel, color = colors.onAccent, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
@@ -143,11 +210,12 @@ fun FieldBox(
 ) {
     val colors = LocalSeanceColors.current
     Row(
-        modifier = modifier
-            .height(height)
-            .background(if (deep) colors.fieldDeep else colors.field, RoundedCornerShape(12.dp))
-            .border(1.dp, colors.line2, RoundedCornerShape(12.dp))
-            .padding(horizontal = 12.dp),
+        modifier =
+            modifier
+                .heightIn(min = height)
+                .background(if (deep) colors.fieldDeep else colors.field, RoundedCornerShape(12.dp))
+                .border(1.dp, colors.line2, RoundedCornerShape(12.dp))
+                .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         content = content,

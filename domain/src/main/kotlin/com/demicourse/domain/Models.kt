@@ -2,6 +2,9 @@ package com.demicourse.domain
 
 import kotlinx.serialization.Serializable
 
+/** Upper bound of repetitions per step: keeps a typed or stored value from exploding the segment list. */
+const val MAX_REPS = 99
+
 @Serializable
 enum class PaceMode { SINGLE, RANGE }
 

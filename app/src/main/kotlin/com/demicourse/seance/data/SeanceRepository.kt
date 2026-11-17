@@ -19,8 +19,9 @@ private val Context.dataStore by preferencesDataStore(name = "seance")
  * There is no history and no backend: everything lives in one DataStore file so the app can
  * reopen on the session the user left it on, per the spec.
  */
-class SeanceRepository(private val context: Context) {
-
+class SeanceRepository(
+    private val context: Context,
+) {
     private object Keys {
         val STEPS = stringPreferencesKey("steps_json")
         val TEMPLATES = stringPreferencesKey("templates_json")
@@ -29,14 +30,16 @@ class SeanceRepository(private val context: Context) {
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    val data: Flow<SeanceData> = context.dataStore.data.map { prefs ->
-        SeanceData(
-            steps = prefs[Keys.STEPS].decodeListOrEmpty(),
-            templates = prefs[Keys.TEMPLATES].decodeListOrEmpty(),
-            settings = prefs[Keys.SETTINGS]?.let { runCatching { json.decodeFromString<AppSettings>(it) }.getOrNull() }
-                ?: AppSettings(),
-        )
-    }
+    val data: Flow<SeanceData> =
+        context.dataStore.data.map { prefs ->
+            SeanceData(
+                steps = prefs[Keys.STEPS].decodeListOrEmpty(),
+                templates = prefs[Keys.TEMPLATES].decodeListOrEmpty(),
+                settings =
+                    prefs[Keys.SETTINGS]?.let { runCatching { json.decodeFromString<AppSettings>(it) }.getOrNull() }
+                        ?: AppSettings(),
+            )
+        }
 
     private fun String?.decodeListOrEmpty(): List<StepSpec> =
         this?.let { runCatching { json.decodeFromString<List<StepSpec>>(it) }.getOrNull() } ?: emptyList()

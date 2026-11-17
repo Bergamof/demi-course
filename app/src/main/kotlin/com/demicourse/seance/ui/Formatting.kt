@@ -15,30 +15,45 @@ import com.demicourse.domain.TurnPoint
 
 /** Display strings for the main screen and editor sheet — a direct port of the prototype's renderVals(). */
 object Formatting {
-
     fun stepCountText(count: Int) = "$count " + if (count > 1) "étapes" else "étape"
 
     /** A pace, single or range, as typed but rendered in the display format: "3m02s" / "9m–11m". */
-    private fun paceValue(mode: PaceMode, pace: String, paceMax: String): String =
+    private fun paceValue(
+        mode: PaceMode,
+        pace: String,
+        paceMax: String,
+    ): String =
         if (mode == PaceMode.RANGE) "${formatMmSsField(pace)}–${formatMmSsField(paceMax)}" else formatMmSsField(pace)
 
-    fun paceText(step: StepSpec, unit: PaceUnit): String =
-        paceValue(step.paceMode, step.pace, step.paceMax) + PaceMath.unitPaceLabel(unit)
+    fun paceText(
+        step: StepSpec,
+        unit: PaceUnit,
+    ): String = paceValue(step.paceMode, step.pace, step.paceMax) + PaceMath.unitPaceLabel(unit)
 
-    fun measureText(step: StepSpec, unit: PaceUnit): String = if (step.measure == Measure.DISTANCE) {
-        val km = PaceMath.parseDistance(step.value).value ?: 0.0
-        "${formatDistance(km)} ${PaceMath.unitDistanceLabel(unit)}"
-    } else {
-        val sec = PaceMath.parseMmSs(step.value).value ?: 0
-        formatDuration(sec.toDouble())
-    }
+    fun measureText(
+        step: StepSpec,
+        unit: PaceUnit,
+    ): String =
+        if (step.measure == Measure.DISTANCE) {
+            val km = PaceMath.parseDistance(step.value).value ?: 0.0
+            "${formatDistance(km)} ${PaceMath.unitDistanceLabel(unit)}"
+        } else {
+            val sec = PaceMath.parseMmSs(step.value).value ?: 0
+            formatDuration(sec.toDouble())
+        }
 
-    fun recoveryChipText(step: StepSpec, unit: PaceUnit): String {
+    fun recoveryChipText(
+        step: StepSpec,
+        unit: PaceUnit,
+    ): String {
         val pace = paceValue(step.recPaceMode, step.recPace, step.recPaceMax)
         return "récup ${formatMmSsField(step.recDur)} à $pace${PaceMath.unitPaceLabel(unit)}"
     }
 
-    fun totalsText(step: StepSpec, unit: PaceUnit): String {
+    fun totalsText(
+        step: StepSpec,
+        unit: PaceUnit,
+    ): String {
         val m = PaceMath.metrics(step)
         if (!m.ok) return "Valeurs incomplètes"
         val uD = PaceMath.unitDistanceLabel(unit)
@@ -55,68 +70,95 @@ object Formatting {
      * the pace (a distance-measured step has an exact distance, a duration-measured one an
      * exact time).
      */
-    fun turnaroundMarkerText(turn: TurnPoint, stepCount: Int, unit: PaceUnit, measure: Measure): String {
+    fun turnaroundMarkerText(
+        turn: TurnPoint,
+        unit: PaceUnit,
+        measure: Measure,
+    ): String {
         val repSuffix = if (turn.reps > 1) " de la répétition ${turn.rep} sur ${turn.reps}" else ""
-        val where = if (turn.kind == SegmentKind.REC) "pendant la récupération$repSuffix" else "pendant l’effort$repSuffix"
+        val where =
+            if (turn.kind == SegmentKind.REC) "pendant la récupération$repSuffix" else "pendant l’effort$repSuffix"
         val uD = PaceMath.unitDistanceLabel(unit)
         val byTime = turn.kind == SegmentKind.REC || measure == Measure.DURATION
         val rest = if (byTime) formatDuration(turn.restTime) else "${formatDistance(turn.restDistance)} $uD"
-        val restScope = when {
-            turn.kind == SegmentKind.REC -> "dans la récupération"
-            turn.reps > 1 -> "dans la répétition"
-            else -> "dans l’effort"
-        }
+        val restScope =
+            when {
+                turn.kind == SegmentKind.REC -> "dans la récupération"
+                turn.reps > 1 -> "dans la répétition"
+                else -> "dans l’effort"
+            }
         return "Demi‑tour $where — ${formatDistance(turn.intoDistance)} $uD après son début " +
             "(${formatDuration(turn.intoTime)}) · il reste $rest $restScope."
     }
 
-    fun totalDistanceText(session: SessionResult, unit: PaceUnit): String =
-        if (session.dMid > 0) formatRange(session.dMin, session.dMax, { formatDistance(it) }, 0.005) else "—"
+    fun totalDistanceText(session: SessionResult): String =
+        if (session.dMid >
+            0
+        ) {
+            formatRange(session.dMin, session.dMax, { formatDistance(it) }, 0.005)
+        } else {
+            "—"
+        }
 
     fun totalDurationText(session: SessionResult): String =
         if (session.tMid > 0) formatRange(session.tMin, session.tMax, { formatDuration(it) }, 1.0) else "—"
 
-    fun turnMainText(session: SessionResult, unit: PaceUnit): String =
-        session.turn?.let { "${formatDistance(it.distance)} ${PaceMath.unitDistanceLabel(unit)}" } ?: "—"
+    fun turnMainText(
+        session: SessionResult,
+        unit: PaceUnit,
+    ): String = session.turn?.let { "${formatDistance(it.distance)} ${PaceMath.unitDistanceLabel(unit)}" } ?: "—"
 
-    fun turnSubText(session: SessionResult, stepCount: Int): String {
+    fun turnSubText(
+        session: SessionResult,
+        stepCount: Int,
+    ): String {
         val turn = session.turn ?: return "Ajoutez des étapes pour connaître le point de demi‑tour."
         return "après ${formatDuration(turn.time)} de course · étape ${turn.stepIndex + 1} sur $stepCount"
     }
 
-    fun templateHint(template: StepSpec, unit: PaceUnit): String = if (template.pace.isNotBlank()) {
-        paceValue(template.paceMode, template.pace, template.paceMax) + PaceMath.unitPaceLabel(unit)
-    } else if (template.measure == Measure.DISTANCE) {
-        "${template.value} ${PaceMath.unitDistanceLabel(unit)}"
-    } else {
-        formatMmSsField(template.value)
-    }
+    fun templateHint(
+        template: StepSpec,
+        unit: PaceUnit,
+    ): String =
+        if (template.pace.isNotBlank()) {
+            paceValue(template.paceMode, template.pace, template.paceMax) + PaceMath.unitPaceLabel(unit)
+        } else if (template.measure == Measure.DISTANCE) {
+            "${template.value} ${PaceMath.unitDistanceLabel(unit)}"
+        } else {
+            formatMmSsField(template.value)
+        }
 
-    fun templateDetail(template: StepSpec, unit: PaceUnit): String {
+    fun templateDetail(
+        template: StepSpec,
+        unit: PaceUnit,
+    ): String {
         val parts = mutableListOf<String>()
         if (template.pace.isNotBlank()) {
             parts += paceValue(template.paceMode, template.pace, template.paceMax) + PaceMath.unitPaceLabel(unit)
         }
         if (template.value.isNotBlank()) {
-            parts += if (template.measure == Measure.DISTANCE) {
-                "${template.value} ${PaceMath.unitDistanceLabel(unit)}"
-            } else {
-                formatMmSsField(template.value)
-            }
+            parts +=
+                if (template.measure == Measure.DISTANCE) {
+                    "${template.value} ${PaceMath.unitDistanceLabel(unit)}"
+                } else {
+                    formatMmSsField(template.value)
+                }
         }
         if (template.recovery) parts += "récup ${formatMmSsField(template.recDur)}"
         return parts.joinToString("  ·  ")
     }
 
     /** The hint line at the bottom of the step/template editor sheet. */
-    fun previewLine(draft: Draft, isTemplate: Boolean, unit: PaceUnit): String {
-        if (isTemplate) return "Un modèle peut ne définir que l’allure, que la longueur, ou les deux — laissez vide ce que vous voulez remplir plus tard."
-        val step = StepSpec(
-            id = "", paceMode = draft.paceMode, pace = draft.pace, paceMax = draft.paceMax,
-            measure = draft.measure, value = draft.value, reps = draft.reps.toIntOrNull() ?: 1,
-            recovery = draft.recovery, recDur = draft.recDur,
-            recPaceMode = draft.recPaceMode, recPace = draft.recPace, recPaceMax = draft.recPaceMax,
-        )
+    fun previewLine(
+        draft: Draft,
+        isTemplate: Boolean,
+        unit: PaceUnit,
+    ): String {
+        if (isTemplate) {
+            return "Un modèle peut ne définir que l’allure, que la longueur, ou les deux — " +
+                "laissez vide ce que vous voulez remplir plus tard."
+        }
+        val step = draft.toStepSpec()
         val m = PaceMath.metrics(step)
         if (!m.ok) return "Allures et durées au format mm.ss — 1.30 = 1 min 30 s, 2.1 = 2 min 1 s."
         val uD = PaceMath.unitDistanceLabel(unit)

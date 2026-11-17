@@ -6,7 +6,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PaceMathTest {
-
     @Test
     fun `parses mm-ss with implicit leading zero and two-digit seconds`() {
         assertEquals(90, PaceMath.parseMmSs("01.30").value)
@@ -119,10 +118,19 @@ class PaceMathTest {
 
     @Test
     fun `metrics multiplies by repetitions and folds in recovery`() {
-        val step = StepSpec(
-            id = "s", paceMode = PaceMode.SINGLE, pace = "4.30", measure = Measure.DISTANCE, value = "1", reps = 4,
-            recovery = true, recDur = "2.00", recPaceMode = PaceMode.SINGLE, recPace = "9.00",
-        )
+        val step =
+            StepSpec(
+                id = "s",
+                paceMode = PaceMode.SINGLE,
+                pace = "4.30",
+                measure = Measure.DISTANCE,
+                value = "1",
+                reps = 4,
+                recovery = true,
+                recDur = "2.00",
+                recPaceMode = PaceMode.SINGLE,
+                recPace = "9.00",
+            )
         val m = PaceMath.metrics(step)
         assertTrue(m.ok)
         // run: 1km @ 4.30 -> d=1, t=270; recovery: 2.00 @ 9.00 -> d = 120/540, t=120. Per rep total d = 1 + 120/540.
@@ -146,5 +154,73 @@ class PaceMathTest {
         assertEquals("10m", PaceMath.autoName(durStep, PaceUnit.MIN_PER_KM))
         val named = StepSpec(id = "s", name = "Custom", measure = Measure.DURATION, value = "10.00")
         assertEquals("Custom", PaceMath.autoName(named, PaceUnit.MIN_PER_KM))
+    }
+
+    @Test
+    fun `autoName keeps a decimal and never produces an empty length`() {
+        assertEquals(
+            "1,50 km",
+            PaceMath.autoName(StepSpec(id = "s", measure = Measure.DISTANCE, value = "1.5"), PaceUnit.MIN_PER_KM),
+        )
+        assertEquals(
+            "0,00 km",
+            PaceMath.autoName(StepSpec(id = "s", measure = Measure.DISTANCE, value = "0.002"), PaceUnit.MIN_PER_KM),
+        )
+        assertEquals(
+            "3 mi",
+            PaceMath.autoName(StepSpec(id = "s", measure = Measure.DISTANCE, value = "3"), PaceUnit.MIN_PER_MILE),
+        )
+        assertEquals(
+            "Étape",
+            PaceMath.autoName(StepSpec(id = "s", measure = Measure.DISTANCE, value = "abc"), PaceUnit.MIN_PER_KM),
+        )
+    }
+
+    @Test
+    fun `a duration with a pace range gets a distance envelope and a midpoint of its bounds`() {
+        val p = PaceMath.piece(PaceMode.RANGE, "4.00", "5.00", Measure.DURATION, "10.00")
+        assertTrue(p.ok)
+        assertEquals(600.0, p.tMin, 1e-6)
+        assertEquals(600.0, p.tMax, 1e-6)
+        assertEquals(600.0 / 300.0, p.dMin, 1e-6)
+        assertEquals(600.0 / 240.0, p.dMax, 1e-6)
+        // Midpoint of the distance bounds, not distance at the midpoint pace (600 / 270).
+        assertEquals(2.25, p.dMid, 1e-6)
+    }
+
+    @Test
+    fun `an inverted pace range is reordered and a missing upper bound is rejected`() {
+        val reversed = PaceMath.piece(PaceMode.RANGE, "5.00", "4.00", Measure.DISTANCE, "1")
+        assertEquals(240.0, reversed.tMin, 1e-6)
+        assertEquals(300.0, reversed.tMax, 1e-6)
+        assertFalse(PaceMath.piece(PaceMode.RANGE, "5.00", "", Measure.DISTANCE, "1").ok)
+    }
+
+    @Test
+    fun `mm-ss bounds, padding and malformed inputs`() {
+        assertEquals(119, PaceMath.parseMmSs("1.59").value)
+        assertEquals(30, PaceMath.parseMmSs("0.30").value)
+        assertEquals(90, PaceMath.parseMmSs(" 1.30 ").value)
+        assertEquals(65, PaceMath.parseMmSs("1:5").value)
+        listOf("1.60", "1.", ".30", "1.300", "1.2.3", "1000", "", null).forEach {
+            assertFalse("$it should be rejected", PaceMath.parseMmSs(it).ok)
+        }
+        assertEquals("Format attendu : mm.ss", PaceMath.parseMmSs("abc").error)
+    }
+
+    @Test
+    fun `distance accepts three decimals at most and reports readable errors`() {
+        assertEquals(1.555, PaceMath.parseDistance("1.555").value!!, 1e-9)
+        listOf("1.5555", "1000", "1e3").forEach { assertFalse("$it should be rejected", PaceMath.parseDistance(it).ok) }
+        assertEquals("Doit être supérieur à zéro", PaceMath.parseDistance("0").error)
+    }
+
+    @Test
+    fun `step metrics clamp the repetition count`() {
+        val m =
+            PaceMath.metrics(
+                StepSpec(id = "s", pace = "5.00", measure = Measure.DISTANCE, value = "1", reps = 5000),
+            )
+        assertEquals(MAX_REPS, m.reps)
     }
 }

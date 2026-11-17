@@ -1,6 +1,7 @@
 package com.demicourse.seance.ui
 
 import com.demicourse.domain.AppSettings
+import com.demicourse.domain.MAX_REPS
 import com.demicourse.domain.Measure
 import com.demicourse.domain.PaceMode
 import com.demicourse.domain.StepSpec
@@ -13,7 +14,7 @@ enum class TemplateReturn { STEP, SETTINGS }
 /**
  * The bottom sheet's editable draft. Numeric fields are kept as raw strings — exactly like the
  * prototype's text inputs — so a partial or invalid entry can still round-trip while the user
- * is typing; [SeanceViewModel.validate] is what turns them into errors or a committed [StepSpec].
+ * is typing; the view model's validation is what turns them into errors or a committed [StepSpec].
  */
 data class Draft(
     val name: String = "",
@@ -32,6 +33,27 @@ data class Draft(
     val templateName: String = "",
 )
 
+/** The step the draft describes; the name and id are left to the caller, who knows the context. */
+fun Draft.toStepSpec(
+    id: String = "",
+    name: String = "",
+): StepSpec =
+    StepSpec(
+        id = id,
+        name = name,
+        paceMode = paceMode,
+        pace = pace,
+        paceMax = if (paceMode == PaceMode.RANGE) paceMax else "",
+        measure = measure,
+        value = value,
+        reps = (reps.toIntOrNull() ?: 1).coerceIn(1, MAX_REPS),
+        recovery = recovery,
+        recDur = if (recovery) recDur else "",
+        recPaceMode = recPaceMode,
+        recPace = if (recovery) recPace else "",
+        recPaceMax = if (recPaceMode == PaceMode.RANGE) recPaceMax else "",
+    )
+
 data class DraftErrors(
     val pace: String? = null,
     val paceMax: String? = null,
@@ -41,8 +63,9 @@ data class DraftErrors(
     val recPace: String? = null,
     val templateName: String? = null,
 ) {
-    val isEmpty: Boolean get() = pace == null && paceMax == null && value == null && reps == null &&
-        recDur == null && recPace == null && templateName == null
+    val isEmpty: Boolean get() =
+        pace == null && paceMax == null && value == null && reps == null &&
+            recDur == null && recPace == null && templateName == null
 }
 
 data class SheetState(

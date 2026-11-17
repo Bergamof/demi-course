@@ -54,14 +54,21 @@ fun EditorBody(
     val errors = sheet.errors
     val isTemplate = sheet.type == SheetType.TEMPLATE
     val optionalNote = if (isTemplate) "· facultatif" else ""
-    val uD = com.demicourse.domain.PaceMath.unitDistanceLabel(unit)
-    val uP = com.demicourse.domain.PaceMath.unitPaceLabel(unit)
+    val uD =
+        com.demicourse.domain.PaceMath
+            .unitDistanceLabel(unit)
+    val uP =
+        com.demicourse.domain.PaceMath
+            .unitPaceLabel(unit)
 
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-
         // Longueur
         Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 SectionLabel("Longueur", optionalNote)
                 PillToggle(
                     options = listOf("Distance ($uD)", "Durée"),
@@ -71,10 +78,16 @@ fun EditorBody(
             }
             FieldBox {
                 SeanceTextField(
-                    controller = controller, field = FieldKey.VALUE, sheet = sheet, value = d.value,
-                    onValueChange = { onField(FieldKey.VALUE, it) }, onSubmit = onSubmit,
+                    controller = controller,
+                    field = FieldKey.VALUE,
+                    sheet = sheet,
+                    value = d.value,
+                    onValueChange = { onField(FieldKey.VALUE, it) },
+                    onSubmit = onSubmit,
                     placeholder = if (d.measure == Measure.DISTANCE) "1,5" else "10.00",
-                    boxed = false, fontSize = 21.sp, modifier = Modifier.weight(1f),
+                    boxed = false,
+                    fontSize = 21.sp,
+                    modifier = Modifier.weight(1f),
                 )
                 Text(if (d.measure == Measure.DISTANCE) uD else "mm.ss", color = colors.muted2, fontSize = 12.sp)
             }
@@ -83,7 +96,11 @@ fun EditorBody(
 
         // Allure cible
         Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 SectionLabel("Allure cible", optionalNote)
                 PillToggle(
                     options = listOf("Unique", "Intervalle"),
@@ -94,18 +111,32 @@ fun EditorBody(
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 FieldBox(modifier = Modifier.weight(1f)) {
                     SeanceTextField(
-                        controller = controller, field = FieldKey.PACE, sheet = sheet, value = d.pace,
-                        onValueChange = { onField(FieldKey.PACE, it) }, onSubmit = onSubmit,
-                        placeholder = "4.30", boxed = false, fontSize = 21.sp, modifier = Modifier.weight(1f),
+                        controller = controller,
+                        field = FieldKey.PACE,
+                        sheet = sheet,
+                        value = d.pace,
+                        onValueChange = { onField(FieldKey.PACE, it) },
+                        onSubmit = onSubmit,
+                        placeholder = "4.30",
+                        boxed = false,
+                        fontSize = 21.sp,
+                        modifier = Modifier.weight(1f),
                     )
                 }
                 if (d.paceMode == PaceMode.RANGE) {
                     Text("à", color = colors.muted2, fontSize = 14.sp, modifier = Modifier.padding(top = 14.dp))
                     FieldBox(modifier = Modifier.weight(1f)) {
                         SeanceTextField(
-                            controller = controller, field = FieldKey.PACE_MAX, sheet = sheet, value = d.paceMax,
-                            onValueChange = { onField(FieldKey.PACE_MAX, it) }, onSubmit = onSubmit,
-                            placeholder = "4.45", boxed = false, fontSize = 21.sp, modifier = Modifier.weight(1f),
+                            controller = controller,
+                            field = FieldKey.PACE_MAX,
+                            sheet = sheet,
+                            value = d.paceMax,
+                            onValueChange = { onField(FieldKey.PACE_MAX, it) },
+                            onSubmit = onSubmit,
+                            placeholder = "4.45",
+                            boxed = false,
+                            fontSize = 21.sp,
+                            modifier = Modifier.weight(1f),
                         )
                     }
                 }
@@ -115,22 +146,33 @@ fun EditorBody(
         }
 
         // Répétitions
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             SectionLabel("Répétitions")
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                 StepperButton("−", onClick = onRepsDown)
                 Box(
-                    modifier = Modifier
-                        .width(56.dp)
-                        .height(40.dp)
-                        .background(colors.field, RoundedCornerShape(11.dp))
-                        .border(1.dp, colors.line2, RoundedCornerShape(11.dp)),
+                    modifier =
+                        Modifier
+                            .width(56.dp)
+                            .height(40.dp)
+                            .background(colors.field, RoundedCornerShape(11.dp))
+                            .border(1.dp, colors.line2, RoundedCornerShape(11.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
                     SeanceTextField(
-                        controller = controller, field = FieldKey.REPS, sheet = sheet, value = d.reps,
-                        onValueChange = { onField(FieldKey.REPS, it) }, onSubmit = onSubmit,
-                        boxed = false, fontSize = 17.sp, monospace = false,
+                        controller = controller,
+                        field = FieldKey.REPS,
+                        sheet = sheet,
+                        value = d.reps,
+                        onValueChange = { onField(FieldKey.REPS, it) },
+                        onSubmit = onSubmit,
+                        boxed = false,
+                        fontSize = 17.sp,
+                        monospace = false,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                         keyboardType = KeyboardType.Number,
                         modifier = Modifier.fillMaxWidth(),
@@ -148,27 +190,42 @@ fun EditorBody(
             CheckRow(checked = d.recovery, label = "Récupération après chaque répétition", onToggle = onToggleRecovery)
             if (d.recovery) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(colors.field, RoundedCornerShape(14.dp))
-                        .border(1.dp, colors.line, RoundedCornerShape(14.dp))
-                        .padding(13.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .background(colors.field, RoundedCornerShape(14.dp))
+                            .border(1.dp, colors.line, RoundedCornerShape(14.dp))
+                            .padding(13.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
                         Box(Modifier.weight(1f)) { SectionLabel("Durée") }
                         FieldBox(modifier = Modifier.width(150.dp), height = 46.dp, deep = true) {
                             SeanceTextField(
-                                controller = controller, field = FieldKey.REC_DUR, sheet = sheet, value = d.recDur,
-                                onValueChange = { onField(FieldKey.REC_DUR, it) }, onSubmit = onSubmit,
-                                placeholder = "2.00", boxed = false, fontSize = 19.sp, modifier = Modifier.weight(1f),
+                                controller = controller,
+                                field = FieldKey.REC_DUR,
+                                sheet = sheet,
+                                value = d.recDur,
+                                onValueChange = { onField(FieldKey.REC_DUR, it) },
+                                onSubmit = onSubmit,
+                                placeholder = "2.00",
+                                boxed = false,
+                                fontSize = 19.sp,
+                                modifier = Modifier.weight(1f),
                             )
                             Text("mm.ss", color = colors.muted2, fontSize = 12.sp)
                         }
                     }
                     FieldError(errors.recDur)
 
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
                         SectionLabel("Allure de récup.")
                         PillToggle(
                             options = listOf("Unique", "Intervalle"),
@@ -179,18 +236,32 @@ fun EditorBody(
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         FieldBox(modifier = Modifier.weight(1f), height = 46.dp, deep = true) {
                             SeanceTextField(
-                                controller = controller, field = FieldKey.REC_PACE, sheet = sheet, value = d.recPace,
-                                onValueChange = { onField(FieldKey.REC_PACE, it) }, onSubmit = onSubmit,
-                                placeholder = "9.00", boxed = false, fontSize = 19.sp, modifier = Modifier.weight(1f),
+                                controller = controller,
+                                field = FieldKey.REC_PACE,
+                                sheet = sheet,
+                                value = d.recPace,
+                                onValueChange = { onField(FieldKey.REC_PACE, it) },
+                                onSubmit = onSubmit,
+                                placeholder = "9.00",
+                                boxed = false,
+                                fontSize = 19.sp,
+                                modifier = Modifier.weight(1f),
                             )
                         }
                         if (d.recPaceMode == PaceMode.RANGE) {
                             Text("à", color = colors.muted2, fontSize = 14.sp, modifier = Modifier.padding(top = 12.dp))
                             FieldBox(modifier = Modifier.weight(1f), height = 46.dp, deep = true) {
                                 SeanceTextField(
-                                    controller = controller, field = FieldKey.REC_PACE_MAX, sheet = sheet, value = d.recPaceMax,
-                                    onValueChange = { onField(FieldKey.REC_PACE_MAX, it) }, onSubmit = onSubmit,
-                                    placeholder = "11.00", boxed = false, fontSize = 19.sp, modifier = Modifier.weight(1f),
+                                    controller = controller,
+                                    field = FieldKey.REC_PACE_MAX,
+                                    sheet = sheet,
+                                    value = d.recPaceMax,
+                                    onValueChange = { onField(FieldKey.REC_PACE_MAX, it) },
+                                    onSubmit = onSubmit,
+                                    placeholder = "11.00",
+                                    boxed = false,
+                                    fontSize = 19.sp,
+                                    modifier = Modifier.weight(1f),
                                 )
                             }
                         }
@@ -205,20 +276,26 @@ fun EditorBody(
 
         Text(
             Formatting.previewLine(d, isTemplate, unit),
-            color = colors.muted2, fontSize = 12.5.sp, lineHeight = 17.sp,
+            color = colors.muted2,
+            fontSize = 12.5.sp,
+            lineHeight = 17.sp,
         )
     }
 }
 
 @Composable
-private fun StepperButton(symbol: String, onClick: () -> Unit) {
+private fun StepperButton(
+    symbol: String,
+    onClick: () -> Unit,
+) {
     val colors = LocalSeanceColors.current
     Box(
-        modifier = Modifier
-            .size(40.dp)
-            .clip(RoundedCornerShape(11.dp))
-            .background(colors.surface2)
-            .clickable(onClick = onClick),
+        modifier =
+            Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(11.dp))
+                .background(colors.surface2)
+                .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Text(symbol, color = colors.fg2, fontSize = 20.sp, fontWeight = FontWeight.Normal)
