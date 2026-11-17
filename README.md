@@ -44,8 +44,15 @@ l'application.
 
 ## Publication
 
-Tout push sur `main` (typiquement un merge de PR) déclenche
-`.github/workflows/release.yml` : calcul de la version du jour, tests du module
+La publication est **manuelle** : merger sur `main` ne publie rien. Pour publier,
+lancer le workflow depuis l'onglet *Actions* de GitHub (*Release* › *Run workflow*,
+branche `main`), ou en ligne de commande :
+
+```bash
+gh workflow run release.yml --ref main
+```
+
+`.github/workflows/release.yml` fait alors : calcul de la version du jour, tests du module
 `domain`, build de l'APK de prod, puis création d'une release GitHub taguée avec
 cette version et portant l'APK en pièce jointe.
 
