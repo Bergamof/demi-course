@@ -8,20 +8,35 @@ Une application Android permettant de configurer une séance de course à pieds 
 - `app/` — application Android (Kotlin + Jetpack Compose), thèmes clair/sombre/système, persistance locale (DataStore) de la séance, des modèles et des réglages.
 - `chats/`, `project/` — bundle de conception original (Claude Design) ayant servi de base à l'implémentation ; conservé pour référence.
 
-## Build
+## Prérequis et environnement
 
-Le projet cible Java 17. La version du JDK est figée dans `.sdkmanrc` pour
-[SDKMAN](https://sdkman.io) :
+Le projet cible Java 17. La version du JDK est figée dans `.sdkmanrc` (source de
+vérité, lue aussi par la CI) pour [SDKMAN](https://sdkman.io) (installation :
+<https://sdkman.io/install>) :
 
-```
-sdk env install   # installe le JDK du projet s'il manque
-sdk env           # bascule le shell courant dessus
-```
+1. Installer le JDK épinglé : `sdk env install`.
+2. L'activer dans le shell courant : `sdk env` (et `sdk env clear` pour revenir en arrière).
+3. Bascule **automatique** à l'entrée dans le dossier : mettre `sdkman_auto_env=true`
+   dans `~/.sdkman/etc/config`.
+4. Vérifier : `java -version` doit afficher `17.0.13` (Temurin).
+
+Un SDK Android (plateforme 35) est nécessaire pour compiler `app` ; `domain` n'a besoin que du JDK.
+
+## Build, tests, lint
 
 ```
 ./gradlew :domain:test        # tests du module de calcul
+./gradlew ktlintCheck         # lint et format (ktlint) ; ktlintFormat pour corriger
 ./gradlew :app:assembleDebug  # build de l'application
 ```
+
+## Intégration continue
+
+`.github/workflows/ci.yml` vérifie chaque pull request : lint (ktlint), tests du module
+`domain`, build de l'APK debug et scan de secrets (gitleaks). Un job final commente la PR avec
+le résultat de chaque vérification. Dependabot tient à jour les dépendances Gradle et les
+actions GitHub. Il est recommandé de protéger `main` avec ces quatre jobs (`lint`, `test`,
+`build`, `security`) en checks obligatoires.
 
 ## Versions
 
