@@ -15,12 +15,12 @@
         <!-- Inner lane -->
         <path
             android:pathData="M34,56 A20,8 0 1,0 74,56 A20,8 0 1,0 34,56 Z"
-            android:strokeColor="#3a3930"
+            android:strokeColor="#c6c2ae"
             android:strokeWidth="2" />
         <!-- Second half of the lap -->
         <path
             android:pathData="M84,56 A30,16 0 0,1 24,56"
-            android:strokeColor="#3a3930"
+            android:strokeColor="#c6c2ae"
             android:strokeLineCap="round"
             android:strokeWidth="7" />
         <!-- First half of the lap -->
@@ -35,15 +35,15 @@
                     android:startY="0"
                     android:endX="84"
                     android:endY="0"
-                    android:startColor="#5aa06b"
-                    android:endColor="#8fc79c" />
+                    android:startColor="#3d7d50"
+                    android:endColor="#2f6b41" />
             </aapt:attr>
         </path>
         <!-- Halfway marker -->
         <path
-            android:fillColor="#f1efe4"
+            android:fillColor="#24231b"
             android:pathData="M78,56 A6,6 0 1,0 90,56 A6,6 0 1,0 78,56 Z"
-            android:strokeColor="#191812"
+            android:strokeColor="#f4f2e7"
             android:strokeWidth="3" />
     </group>
 </vector>
