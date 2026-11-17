@@ -42,10 +42,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.demicourse.seance.ui.DraftErrors
-import com.demicourse.seance.ui.FieldKey
-import com.demicourse.seance.ui.SheetState
-import com.demicourse.seance.ui.fieldOrder
+import com.demicourse.domain.DraftErrors
+import com.demicourse.domain.FieldKey
+import com.demicourse.domain.SheetState
+import com.demicourse.domain.fieldOrder
 import com.demicourse.seance.ui.theme.LocalSeanceColors
 import kotlinx.coroutines.delay
 

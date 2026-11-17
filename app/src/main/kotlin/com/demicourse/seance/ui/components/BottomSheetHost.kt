@@ -29,13 +29,15 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.demicourse.domain.FieldKey
+import com.demicourse.domain.Formatting
+import com.demicourse.domain.HalfBy
 import com.demicourse.domain.PaceUnit
+import com.demicourse.domain.SheetState
+import com.demicourse.domain.SheetType
 import com.demicourse.domain.StepSpec
 import com.demicourse.domain.ThemeChoice
-import com.demicourse.seance.ui.FieldKey
 import com.demicourse.seance.ui.SeanceViewModel
-import com.demicourse.seance.ui.SheetState
-import com.demicourse.seance.ui.SheetType
 import com.demicourse.seance.ui.theme.LocalSeanceColors
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -47,6 +49,7 @@ fun BottomSheetHost(
     templates: List<StepSpec>,
     unit: PaceUnit,
     themeChoice: ThemeChoice,
+    halfBy: HalfBy,
     viewModel: SeanceViewModel,
 ) {
     val colors = LocalSeanceColors.current
@@ -154,8 +157,11 @@ fun BottomSheetHost(
                     sheet = sheet,
                     unit = unit,
                     themeChoice = themeChoice,
+                    halfBy = halfBy,
                     templates = templates,
                     onSetTheme = viewModel::setTheme,
+                    onSetHalfBy = viewModel::setHalfBy,
+                    onSetUnit = viewModel::setUnit,
                     onField = viewModel::setField,
                     onSetRecSingle = viewModel::setRecSingle,
                     onSetRecRange = viewModel::setRecRange,
@@ -233,8 +239,7 @@ private fun TemplatePicker(
                 ) {
                     Text(tpl.name, color = colors.fg2, fontSize = 13.sp)
                     Text(
-                        com.demicourse.seance.ui.Formatting
-                            .templateHint(tpl, unit),
+                        Formatting.templateHint(tpl, unit),
                         color = colors.muted2,
                         fontSize = 11.sp,
                         fontFamily = FontFamily.Monospace,

@@ -25,14 +25,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.demicourse.domain.FieldKey
+import com.demicourse.domain.Formatting
+import com.demicourse.domain.HalfBy
 import com.demicourse.domain.PaceMode
 import com.demicourse.domain.PaceUnit
+import com.demicourse.domain.SheetState
 import com.demicourse.domain.StepSpec
 import com.demicourse.domain.ThemeChoice
 import com.demicourse.seance.BuildConfig
-import com.demicourse.seance.ui.FieldKey
-import com.demicourse.seance.ui.Formatting
-import com.demicourse.seance.ui.SheetState
 import com.demicourse.seance.ui.theme.LocalSeanceColors
 import com.demicourse.seance.ui.theme.resolveIsDark
 
@@ -42,8 +43,11 @@ fun SettingsBody(
     sheet: SheetState,
     unit: PaceUnit,
     themeChoice: ThemeChoice,
+    halfBy: HalfBy,
     templates: List<StepSpec>,
     onSetTheme: (ThemeChoice) -> Unit,
+    onSetHalfBy: (HalfBy) -> Unit,
+    onSetUnit: (PaceUnit) -> Unit,
     onField: (FieldKey, String) -> Unit,
     onSetRecSingle: () -> Unit,
     onSetRecRange: () -> Unit,
@@ -80,6 +84,44 @@ fun SettingsBody(
                     "Thème ${if (isDark) "sombre" else "clair"} forcé, quel que soit le réglage du système."
                 }
             Text(note, color = colors.muted2, fontSize = 12.sp, lineHeight = 17.sp)
+        }
+
+        Divider()
+
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            SectionLabel("Demi-tour à mi-…")
+            PillToggle(
+                options = listOf("Distance", "Durée"),
+                selectedIndex = HalfBy.entries.indexOf(halfBy),
+                onSelect = { onSetHalfBy(HalfBy.entries[it]) },
+                fillWidth = true,
+            )
+            Text(
+                if (halfBy == HalfBy.DISTANCE) {
+                    "Le demi-tour tombe à la moitié de la distance totale."
+                } else {
+                    "Le demi-tour tombe à la moitié de la durée totale."
+                },
+                color = colors.muted2,
+                fontSize = 12.sp,
+                lineHeight = 17.sp,
+            )
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            SectionLabel("Unité")
+            PillToggle(
+                options = listOf("min/km", "min/mile"),
+                selectedIndex = PaceUnit.entries.indexOf(unit),
+                onSelect = { onSetUnit(PaceUnit.entries[it]) },
+                fillWidth = true,
+            )
+            Text(
+                "Change seulement les libellés : les valeurs déjà saisies ne sont pas converties.",
+                color = colors.muted2,
+                fontSize = 12.sp,
+                lineHeight = 17.sp,
+            )
         }
 
         Divider()

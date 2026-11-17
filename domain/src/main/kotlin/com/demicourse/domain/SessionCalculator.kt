@@ -48,6 +48,9 @@ object SessionCalculator {
      * distance or time (per [halfBy]), walking step repetitions (and their
      * recovery, if any) in order as a flat list of segments.
      *
+     * A turnaround falling exactly on the boundary between two segments belongs to the start of the
+     * next one (nothing is left to run of the previous one).
+     *
      * Segment "mid" values (the midpoint of a pace range's distance/time envelope)
      * are used for placing the turnaround, matching the prototype: a pace range
      * doesn't widen the turnaround search, it's resolved to its middle estimate.
@@ -87,7 +90,7 @@ object SessionCalculator {
         var turn: TurnPoint? = null
         for (seg in segments) {
             val step = if (byDistance) seg.distance else seg.time
-            if (acc + step >= target && step > 0) {
+            if (acc + step > target && step > 0) {
                 val f = (target - acc) / step
                 turn =
                     TurnPoint(

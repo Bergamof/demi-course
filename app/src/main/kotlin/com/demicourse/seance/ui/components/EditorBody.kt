@@ -22,13 +22,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.demicourse.domain.FieldKey
+import com.demicourse.domain.Formatting
 import com.demicourse.domain.Measure
 import com.demicourse.domain.PaceMode
 import com.demicourse.domain.PaceUnit
-import com.demicourse.seance.ui.FieldKey
-import com.demicourse.seance.ui.Formatting
-import com.demicourse.seance.ui.SheetState
-import com.demicourse.seance.ui.SheetType
+import com.demicourse.domain.SheetState
+import com.demicourse.domain.SheetType
 import com.demicourse.seance.ui.theme.LocalSeanceColors
 
 /** The shared step/template editor body: length, target pace, repetitions, recovery, and the preview hint. */
