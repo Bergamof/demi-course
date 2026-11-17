@@ -108,28 +108,30 @@ fun SeanceTextField(
                 tfv = new
                 if (new.text != value) onValueChange(new.text)
             },
-            modifier = Modifier
-                .focusRequester(controller.requesterFor(field))
-                .bringIntoViewRequester(bringIntoView)
-                .onFocusChanged {
-                    focused = it.isFocused
-                    if (it.isFocused) controller.focusedField = field
-                }
-                .fillMaxWidth(),
+            modifier =
+                Modifier
+                    .focusRequester(controller.requesterFor(field))
+                    .bringIntoViewRequester(bringIntoView)
+                    .onFocusChanged {
+                        focused = it.isFocused
+                        if (it.isFocused) controller.focusedField = field
+                    }.fillMaxWidth(),
             singleLine = true,
             textStyle = style,
             cursorBrush = SolidColor(colors.accent),
-            keyboardOptions = KeyboardOptions(
-                keyboardType = keyboardType,
-                // Free-text fields (the template name) get sentence capitalization; every other
-                // field is a pace/distance/duration and must not turn into a text keyboard.
-                capitalization = if (keyboardType == KeyboardType.Text) {
-                    KeyboardCapitalization.Sentences
-                } else {
-                    KeyboardCapitalization.None
-                },
-                imeAction = ImeAction.Next,
-            ),
+            keyboardOptions =
+                KeyboardOptions(
+                    keyboardType = keyboardType,
+                    // Free-text fields (the template name) get sentence capitalization; every other
+                    // field is a pace/distance/duration and must not turn into a text keyboard.
+                    capitalization =
+                        if (keyboardType == KeyboardType.Text) {
+                            KeyboardCapitalization.Sentences
+                        } else {
+                            KeyboardCapitalization.None
+                        },
+                    imeAction = ImeAction.Next,
+                ),
             keyboardActions = KeyboardActions(onNext = { controller.advance(sheet, selectAll = true, onSubmit) }),
             decorationBox = { inner ->
                 Box(contentAlignment = Alignment.CenterStart) {
@@ -144,11 +146,12 @@ fun SeanceTextField(
 
     if (boxed) {
         Box(
-            modifier = modifier
-                .height(height)
-                .background(colors.field, RoundedCornerShape(12.dp))
-                .border(1.dp, colors.line2, RoundedCornerShape(12.dp))
-                .padding(horizontal = 12.dp),
+            modifier =
+                modifier
+                    .height(height)
+                    .background(colors.field, RoundedCornerShape(12.dp))
+                    .border(1.dp, colors.line2, RoundedCornerShape(12.dp))
+                    .padding(horizontal = 12.dp),
             contentAlignment = Alignment.CenterStart,
         ) { core() }
     } else {

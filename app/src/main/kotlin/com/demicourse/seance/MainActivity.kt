@@ -32,9 +32,10 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun DemiCourseApp(repository: SeanceRepository) {
-    val factory = viewModelFactory {
-        initializer { SeanceViewModel(repository) }
-    }
+    val factory =
+        viewModelFactory {
+            initializer { SeanceViewModel(repository) }
+        }
     val viewModel: SeanceViewModel = viewModel(factory = factory)
     val state by viewModel.state.collectAsStateWithLifecycle()
 

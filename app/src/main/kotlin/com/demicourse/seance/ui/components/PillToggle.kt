@@ -32,10 +32,11 @@ fun PillToggle(
 ) {
     val colors = LocalSeanceColors.current
     Row(
-        modifier = modifier
-            .background(colors.field, RoundedCornerShape(9.dp))
-            .border(1.dp, colors.line, RoundedCornerShape(9.dp))
-            .padding(2.dp),
+        modifier =
+            modifier
+                .background(colors.field, RoundedCornerShape(9.dp))
+                .border(1.dp, colors.line, RoundedCornerShape(9.dp))
+                .padding(2.dp),
     ) {
         options.forEachIndexed { index, label ->
             val selected = index == selectedIndex
@@ -46,11 +47,12 @@ fun PillToggle(
                 fontSize = 12.sp,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
                 textAlign = if (fillWidth) TextAlign.Center else TextAlign.Unspecified,
-                modifier = itemModifier
-                    .clip(RoundedCornerShape(7.dp))
-                    .background(if (selected) colors.accent else Color.Transparent)
-                    .clickable { onSelect(index) }
-                    .padding(horizontal = 10.dp, vertical = 7.dp),
+                modifier =
+                    itemModifier
+                        .clip(RoundedCornerShape(7.dp))
+                        .background(if (selected) colors.accent else Color.Transparent)
+                        .clickable { onSelect(index) }
+                        .padding(horizontal = 10.dp, vertical = 7.dp),
             )
         }
     }

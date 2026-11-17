@@ -43,7 +43,6 @@ data class SessionResult(
 )
 
 object SessionCalculator {
-
     /**
      * Totals the session and locates the turnaround point at half of the total
      * distance or time (per [halfBy]), walking step repetitions (and their
@@ -53,14 +52,23 @@ object SessionCalculator {
      * are used for placing the turnaround, matching the prototype: a pace range
      * doesn't widen the turnaround search, it's resolved to its middle estimate.
      */
-    fun compute(steps: List<StepSpec>, halfBy: HalfBy): SessionResult {
-        var dMin = 0.0; var dMax = 0.0; var tMin = 0.0; var tMax = 0.0
+    fun compute(
+        steps: List<StepSpec>,
+        halfBy: HalfBy,
+    ): SessionResult {
+        var dMin = 0.0
+        var dMax = 0.0
+        var tMin = 0.0
+        var tMax = 0.0
         val segments = mutableListOf<Segment>()
 
         steps.forEachIndexed { index, step ->
             val m = PaceMath.metrics(step)
             if (!m.ok) return@forEachIndexed
-            dMin += m.dMin; dMax += m.dMax; tMin += m.tMin; tMax += m.tMax
+            dMin += m.dMin
+            dMax += m.dMax
+            tMin += m.tMin
+            tMax += m.tMax
             val run = m.run!!
             for (rep in 1..m.reps) {
                 segments += Segment(index, rep, m.reps, SegmentKind.RUN, run.dMid, run.tMid)
@@ -70,7 +78,7 @@ object SessionCalculator {
 
         val dMid = (dMin + dMax) / 2
         val tMid = (tMin + tMax) / 2
-        val byDistance = halfBy != HalfBy.DURATION
+        val byDistance = halfBy == HalfBy.DISTANCE
         val target = (if (byDistance) dMid else tMid) / 2
 
         var acc = 0.0
@@ -81,15 +89,24 @@ object SessionCalculator {
             val step = if (byDistance) seg.distance else seg.time
             if (acc + step >= target && step > 0) {
                 val f = (target - acc) / step
-                turn = TurnPoint(
-                    stepIndex = seg.stepIndex, rep = seg.rep, reps = seg.reps, kind = seg.kind,
-                    distance = accDist + f * seg.distance, time = accTime + f * seg.time,
-                    intoDistance = f * seg.distance, intoTime = f * seg.time,
-                    restDistance = (1 - f) * seg.distance, restTime = (1 - f) * seg.time,
-                )
+                turn =
+                    TurnPoint(
+                        stepIndex = seg.stepIndex,
+                        rep = seg.rep,
+                        reps = seg.reps,
+                        kind = seg.kind,
+                        distance = accDist + f * seg.distance,
+                        time = accTime + f * seg.time,
+                        intoDistance = f * seg.distance,
+                        intoTime = f * seg.time,
+                        restDistance = (1 - f) * seg.distance,
+                        restTime = (1 - f) * seg.time,
+                    )
                 break
             }
-            acc += step; accTime += seg.time; accDist += seg.distance
+            acc += step
+            accTime += seg.time
+            accDist += seg.distance
         }
 
         return SessionResult(dMin, dMax, tMin, tMax, dMid, tMid, turn, segments)

@@ -48,18 +48,21 @@ fun SeanceScreen(viewModel: SeanceViewModel) {
 
     Box(modifier = Modifier.fillMaxSize().background(colors.bg)) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                // The window is edge-to-edge: the background above paints under the status bar,
-                // but the content itself must clear it (and any display cutout / gesture bar).
-                .windowInsetsPadding(
-                    WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
-                ),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    // The window is edge-to-edge: the background above paints under the status bar,
+                    // but the content itself must clear it (and any display cutout / gesture bar).
+                    .windowInsetsPadding(
+                        WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+                    ),
         ) {
             Header(onSettings = viewModel::openSettingsSheet, onReset = viewModel::resetSession)
 
             SummaryCard(
-                session = session, unit = state.settings.unit, stepCount = state.steps.size,
+                session = session,
+                unit = state.settings.unit,
+                stepCount = state.steps.size,
                 modifier = Modifier.padding(horizontal = 16.dp),
             )
 
@@ -68,7 +71,13 @@ fun SeanceScreen(viewModel: SeanceViewModel) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Bottom,
             ) {
-                Text("ÉTAPES", color = colors.muted, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp)
+                Text(
+                    "ÉTAPES",
+                    color = colors.muted,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 1.sp,
+                )
                 Text(Formatting.stepCountText(state.steps.size), color = colors.muted2, fontSize = 12.sp)
             }
 
@@ -83,8 +92,13 @@ fun SeanceScreen(viewModel: SeanceViewModel) {
                     itemsIndexed(state.steps, key = { _, step -> step.id }) { index, step ->
                         val turn = session.turn?.takeIf { it.stepIndex == index }
                         com.demicourse.seance.ui.components.StepCard(
-                            step = step, index = index, unit = state.settings.unit, turn = turn, stepCount = state.steps.size,
-                            onEdit = { viewModel.editStep(step) }, onDelete = { viewModel.deleteStep(step.id) },
+                            step = step,
+                            index = index,
+                            unit = state.settings.unit,
+                            turn = turn,
+                            stepCount = state.steps.size,
+                            onEdit = { viewModel.editStep(step) },
+                            onDelete = { viewModel.deleteStep(step.id) },
                         )
                     }
                 }
@@ -92,22 +106,23 @@ fun SeanceScreen(viewModel: SeanceViewModel) {
         }
 
         Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .background(Brush.verticalGradient(listOf(colors.bg.copy(alpha = 0f), colors.bg, colors.bg)))
-                .windowInsetsPadding(
-                    WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
-                )
-                .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 16.dp),
+            modifier =
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .background(Brush.verticalGradient(listOf(colors.bg.copy(alpha = 0f), colors.bg, colors.bg)))
+                    .windowInsetsPadding(
+                        WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
+                    ).padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 16.dp),
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(colors.accent)
-                    .clickable(onClick = viewModel::openStepSheet),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(52.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(colors.accent)
+                        .clickable(onClick = viewModel::openStepSheet),
                 horizontalArrangement = Arrangement.spacedBy(9.dp, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -118,15 +133,21 @@ fun SeanceScreen(viewModel: SeanceViewModel) {
 
         state.sheet?.let { sheet ->
             BottomSheetHost(
-                sheet = sheet, templates = state.templates, unit = state.settings.unit,
-                themeChoice = state.settings.theme, viewModel = viewModel,
+                sheet = sheet,
+                templates = state.templates,
+                unit = state.settings.unit,
+                themeChoice = state.settings.theme,
+                viewModel = viewModel,
             )
         }
     }
 }
 
 @Composable
-private fun Header(onSettings: () -> Unit, onReset: () -> Unit) {
+private fun Header(
+    onSettings: () -> Unit,
+    onReset: () -> Unit,
+) {
     val colors = LocalSeanceColors.current
     Row(
         modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 14.dp, bottom = 12.dp),
@@ -145,14 +166,18 @@ private fun Header(onSettings: () -> Unit, onReset: () -> Unit) {
 }
 
 @Composable
-private fun CircleButton(symbol: String, onClick: () -> Unit) {
+private fun CircleButton(
+    symbol: String,
+    onClick: () -> Unit,
+) {
     val colors = LocalSeanceColors.current
     Box(
-        modifier = Modifier
-            .size(34.dp)
-            .clip(RoundedCornerShape(17.dp))
-            .border(1.dp, colors.line3, RoundedCornerShape(17.dp))
-            .clickable(onClick = onClick),
+        modifier =
+            Modifier
+                .size(34.dp)
+                .clip(RoundedCornerShape(17.dp))
+                .border(1.dp, colors.line3, RoundedCornerShape(17.dp))
+                .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Text(symbol, color = colors.muted, fontSize = 16.sp)
@@ -163,16 +188,19 @@ private fun CircleButton(symbol: String, onClick: () -> Unit) {
 private fun EmptyState(modifier: Modifier = Modifier) {
     val colors = LocalSeanceColors.current
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .dashedBorder(colors.line2, 16.dp)
-            .padding(vertical = 26.dp, horizontal = 18.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .dashedBorder(colors.line2, 16.dp)
+                .padding(vertical = 26.dp, horizontal = 18.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             "Aucune étape.\nAjoutez‑en une pour calculer le demi‑tour.",
-            color = colors.muted2, fontSize = 13.sp, lineHeight = 19.sp,
+            color = colors.muted2,
+            fontSize = 13.sp,
+            lineHeight = 19.sp,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         )
     }

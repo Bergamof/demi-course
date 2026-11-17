@@ -41,8 +41,9 @@ data class DraftErrors(
     val recPace: String? = null,
     val templateName: String? = null,
 ) {
-    val isEmpty: Boolean get() = pace == null && paceMax == null && value == null && reps == null &&
-        recDur == null && recPace == null && templateName == null
+    val isEmpty: Boolean get() =
+        pace == null && paceMax == null && value == null && reps == null &&
+            recDur == null && recPace == null && templateName == null
 }
 
 data class SheetState(

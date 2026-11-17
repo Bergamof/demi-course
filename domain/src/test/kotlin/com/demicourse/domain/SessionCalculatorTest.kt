@@ -2,14 +2,41 @@ package com.demicourse.domain
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class SessionCalculatorTest {
-
     // The prototype's seed session: warm-up, 4x1km fractionné, cool-down.
-    private val warmup = StepSpec(id = "s1", name = "Échauffement", paceMode = PaceMode.SINGLE, pace = "6.00", measure = Measure.DURATION, value = "10.00", reps = 1)
-    private val fractionne = StepSpec(id = "s2", paceMode = PaceMode.RANGE, pace = "4.30", paceMax = "4.45", measure = Measure.DISTANCE, value = "1", reps = 4)
-    private val cooldown = StepSpec(id = "s3", name = "Retour au calme", paceMode = PaceMode.SINGLE, pace = "6.30", measure = Measure.DURATION, value = "8.00", reps = 1)
+    private val warmup =
+        StepSpec(
+            id = "s1",
+            name = "Échauffement",
+            paceMode = PaceMode.SINGLE,
+            pace = "6.00",
+            measure = Measure.DURATION,
+            value = "10.00",
+            reps = 1,
+        )
+    private val fractionne =
+        StepSpec(
+            id = "s2",
+            paceMode = PaceMode.RANGE,
+            pace = "4.30",
+            paceMax = "4.45",
+            measure = Measure.DISTANCE,
+            value = "1",
+            reps = 4,
+        )
+    private val cooldown =
+        StepSpec(
+            id = "s3",
+            name = "Retour au calme",
+            paceMode = PaceMode.SINGLE,
+            pace = "6.30",
+            measure = Measure.DURATION,
+            value = "8.00",
+            reps = 1,
+        )
     private val seedSteps = listOf(warmup, fractionne, cooldown)
 
     @Test
@@ -34,20 +61,112 @@ class SessionCalculatorTest {
     }
 
     @Test
-    fun `turnaround by duration differs from turnaround by distance`() {
+    fun `turnaround by duration lands at half of the total time`() {
+        val turn = SessionCalculator.compute(seedSteps, HalfBy.DURATION).turn!!
+        // Half of 2190 s = 1095 s: 600 s of warm-up, then 495 s into the fractionné, i.e. 217.5 s into rep 2.
+        assertEquals(1, turn.stepIndex)
+        assertEquals(2, turn.rep)
+        assertEquals(1095.0, turn.time, 1e-6)
+        assertEquals(217.5, turn.intoTime, 1e-6)
+    }
+
+    @Test
+    fun `halving by distance and by duration place the turnaround at different instants`() {
         val byDist = SessionCalculator.compute(seedSteps, HalfBy.DISTANCE).turn!!
         val byDur = SessionCalculator.compute(seedSteps, HalfBy.DURATION).turn!!
-        // By duration, target = tMid/2 = 1095s, which also falls in rep 2 of the fractionné here,
-        // but at a different point in time/distance than the distance-based target.
-        assertNotEquals(byDist.time, byDur.time)
+        assertEquals(1094.5, byDist.time, 0.05)
+        assertEquals(0.5, byDur.time - byDist.time, 0.05)
+    }
+
+    @Test
+    fun `halving can pick a run or a recovery depending on the setting`() {
+        // 1 km at 4.00 (240 s) then a 60 s recovery at 10.00 (0.1 km): total 1.1 km, 300 s.
+        // By distance the middle (0.55 km) is inside the run; by duration (150 s) it is too, but
+        // with a 2-rep step the second half starts after the first recovery.
+        val step =
+            StepSpec(
+                id = "h1",
+                pace = "4.00",
+                measure = Measure.DISTANCE,
+                value = "1",
+                reps = 2,
+                recovery = true,
+                recDur = "1.00",
+                recPace = "10.00",
+            )
+        val byDist = SessionCalculator.compute(listOf(step), HalfBy.DISTANCE).turn!!
+        val byDur = SessionCalculator.compute(listOf(step), HalfBy.DURATION).turn!!
+        // 2.2 km total -> 1.1 km: exactly the end of rep 1 recovery, hosted by the recovery segment.
+        assertEquals(SegmentKind.REC, byDist.kind)
+        // 600 s total -> 300 s: the end of rep 1 recovery too (240 + 60).
+        assertEquals(SegmentKind.REC, byDur.kind)
+        assertEquals(1, byDur.rep)
+    }
+
+    @Test
+    fun `segments alternate run and recovery for every repetition including the last`() {
+        val step =
+            StepSpec(
+                id = "g1",
+                pace = "5.00",
+                measure = Measure.DURATION,
+                value = "2.00",
+                reps = 2,
+                recovery = true,
+                recDur = "1.00",
+                recPace = "9.00",
+            )
+        val kinds = SessionCalculator.compute(listOf(step), HalfBy.DISTANCE).segments.map { it.kind }
+        assertEquals(listOf(SegmentKind.RUN, SegmentKind.REC, SegmentKind.RUN, SegmentKind.REC), kinds)
+    }
+
+    @Test
+    fun `an invalid step is skipped and later steps keep their index`() {
+        val invalid = StepSpec(id = "bad", pace = "", value = "1")
+        val valid = StepSpec(id = "ok", pace = "5.00", measure = Measure.DISTANCE, value = "2")
+        val s = SessionCalculator.compute(listOf(invalid, valid), HalfBy.DISTANCE)
+        assertEquals(2.0, s.dMid, 1e-6)
+        assertEquals(1, s.turn!!.stepIndex)
+    }
+
+    @Test
+    fun `totals expose the min and max envelopes of a pace range`() {
+        val s = SessionCalculator.compute(listOf(fractionne), HalfBy.DISTANCE)
+        assertEquals(4.0, s.dMin, 1e-6)
+        assertEquals(4.0, s.dMax, 1e-6)
+        assertEquals(4 * 270.0, s.tMin, 1e-6)
+        assertEquals(4 * 285.0, s.tMax, 1e-6)
+    }
+
+    @Test
+    fun `a repetition count above the cap is clamped instead of exploding the segment list`() {
+        val huge = StepSpec(id = "x", pace = "5.00", measure = Measure.DURATION, value = "1.00", reps = Int.MAX_VALUE)
+        val s = SessionCalculator.compute(listOf(huge), HalfBy.DISTANCE)
+        assertEquals(MAX_REPS, s.segments.size)
+        assertEquals(MAX_REPS * 60.0, s.tMid, 1e-6)
+    }
+
+    @Test
+    fun `zero or negative repetitions count as one`() {
+        val step = StepSpec(id = "z", pace = "5.00", measure = Measure.DURATION, value = "1.00", reps = 0)
+        assertEquals(1, SessionCalculator.compute(listOf(step), HalfBy.DISTANCE).segments.size)
     }
 
     @Test
     fun `recovery segments are included and can host the turnaround`() {
-        val withRecovery = StepSpec(
-            id = "r1", paceMode = PaceMode.SINGLE, pace = "4.00", measure = Measure.DISTANCE, value = "1", reps = 2,
-            recovery = true, recDur = "5.00", recPaceMode = PaceMode.SINGLE, recPace = "10.00",
-        )
+        val withRecovery =
+            StepSpec(
+                id = "r1",
+                paceMode = PaceMode.SINGLE,
+                pace = "4.00",
+                measure = Measure.DISTANCE,
+                value = "1",
+                reps = 2,
+                recovery = true,
+                recDur = "5.00",
+                recPaceMode = PaceMode.SINGLE,
+                recPace = "10.00",
+            )
         val s = SessionCalculator.compute(listOf(withRecovery), HalfBy.DISTANCE)
         // total distance = 2 * (1 + 0.5) = 3 km; half = 1.5 km, which falls inside the first recovery
         // (after 1 km of running, the recovery covers km 1.0..1.5 of distance).
@@ -73,9 +192,15 @@ class SessionCalculatorTest {
     fun `the remainder covers the current repetition only, not the rest of the step`() {
         // 3 x 2 min: the turnaround at half of 6 min falls 1 min into the second repetition,
         // so 1 min is left to run of it — not the 3 min left of the step as a whole.
-        val intervals = StepSpec(
-            id = "i1", paceMode = PaceMode.SINGLE, pace = "5.00", measure = Measure.DURATION, value = "2.00", reps = 3,
-        )
+        val intervals =
+            StepSpec(
+                id = "i1",
+                paceMode = PaceMode.SINGLE,
+                pace = "5.00",
+                measure = Measure.DURATION,
+                value = "2.00",
+                reps = 3,
+            )
         val turn = SessionCalculator.compute(listOf(intervals), HalfBy.DURATION).turn!!
         assertEquals(2, turn.rep)
         assertEquals(SegmentKind.RUN, turn.kind)
@@ -86,10 +211,19 @@ class SessionCalculatorTest {
 
     @Test
     fun `a turnaround inside a recovery reports what is left of that recovery`() {
-        val withRecovery = StepSpec(
-            id = "r2", paceMode = PaceMode.SINGLE, pace = "4.00", measure = Measure.DISTANCE, value = "1", reps = 3,
-            recovery = true, recDur = "5.00", recPaceMode = PaceMode.SINGLE, recPace = "10.00",
-        )
+        val withRecovery =
+            StepSpec(
+                id = "r2",
+                paceMode = PaceMode.SINGLE,
+                pace = "4.00",
+                measure = Measure.DISTANCE,
+                value = "1",
+                reps = 3,
+                recovery = true,
+                recDur = "5.00",
+                recPaceMode = PaceMode.SINGLE,
+                recPace = "10.00",
+            )
         val turn = SessionCalculator.compute(listOf(withRecovery), HalfBy.DURATION).turn!!
         // 3 x (240 s run + 300 s recovery) = 1620 s; half is 810 s, which is 30 s into the
         // second recovery — so 4m30s of that recovery are left, and nothing further counts.
@@ -103,7 +237,8 @@ class SessionCalculatorTest {
     @Test
     fun `a lone step leaves its own second half after the turnaround`() {
         // One step, one repetition, no recovery: the segment *is* the step, so half of it remains.
-        val single = StepSpec(id = "o1", paceMode = PaceMode.SINGLE, pace = "5.00", measure = Measure.DISTANCE, value = "4")
+        val single =
+            StepSpec(id = "o1", paceMode = PaceMode.SINGLE, pace = "5.00", measure = Measure.DISTANCE, value = "4")
         val turn = SessionCalculator.compute(listOf(single), HalfBy.DISTANCE).turn!!
         assertEquals(2.0, turn.intoDistance, 1e-6)
         assertEquals(2.0, turn.restDistance, 1e-6)
@@ -114,8 +249,6 @@ class SessionCalculatorTest {
     fun `empty session has no turnaround`() {
         val s = SessionCalculator.compute(emptyList(), HalfBy.DISTANCE)
         assertEquals(0.0, s.dMid, 1e-9)
-        org.junit.Assert.assertNull(s.turn)
+        assertNull(s.turn)
     }
-
-    private fun assertNotEquals(a: Double, b: Double) = org.junit.Assert.assertNotEquals(a, b, 1e-6)
 }

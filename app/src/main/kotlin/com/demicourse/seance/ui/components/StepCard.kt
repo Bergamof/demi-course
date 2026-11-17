@@ -43,18 +43,20 @@ fun StepCard(
 ) {
     val colors = LocalSeanceColors.current
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(colors.surface, RoundedCornerShape(16.dp))
-            .border(1.dp, colors.line, RoundedCornerShape(16.dp))
-            .padding(horizontal = 14.dp, vertical = 13.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .background(colors.surface, RoundedCornerShape(16.dp))
+                .border(1.dp, colors.line, RoundedCornerShape(16.dp))
+                .padding(horizontal = 14.dp, vertical = 13.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Box(
-                modifier = Modifier
-                    .size(22.dp)
-                    .background(colors.surface3, RoundedCornerShape(7.dp)),
+                modifier =
+                    Modifier
+                        .size(22.dp)
+                        .background(colors.surface3, RoundedCornerShape(7.dp)),
                 contentAlignment = Alignment.Center,
             ) {
                 Text("${index + 1}", color = colors.muted, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
@@ -64,22 +66,46 @@ fun StepCard(
                 modifier = Modifier.weight(1f).clickable(onClick = onEdit),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
                     Text(
-                        com.demicourse.domain.PaceMath.autoName(step, unit),
-                        color = colors.fg, fontSize = 16.sp, fontWeight = FontWeight.SemiBold,
+                        com.demicourse.domain.PaceMath
+                            .autoName(step, unit),
+                        color = colors.fg,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
                     )
                     if (step.reps > 1) {
-                        Chip(text = "× ${step.reps}", background = colors.accentChip, foreground = colors.accentFg, bold = true)
+                        Chip(
+                            text = "× ${step.reps}",
+                            background = colors.accentChip,
+                            foreground = colors.accentFg,
+                            bold = true,
+                        )
                     }
                 }
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Chip(text = Formatting.paceText(step, unit), background = colors.surface2, foreground = colors.fg2, monospace = true)
-                    Chip(text = Formatting.measureText(step, unit), background = colors.surface2, foreground = colors.fg2, monospace = true)
+                    Chip(
+                        text = Formatting.paceText(step, unit),
+                        background = colors.surface2,
+                        foreground = colors.fg2,
+                        monospace = true,
+                    )
+                    Chip(
+                        text = Formatting.measureText(step, unit),
+                        background = colors.surface2,
+                        foreground = colors.fg2,
+                        monospace = true,
+                    )
                     if (step.recovery) {
                         Chip(
-                            text = Formatting.recoveryChipText(step, unit), background = Color.Transparent, foreground = colors.muted,
-                            monospace = true, dashedBorder = colors.dash,
+                            text = Formatting.recoveryChipText(step, unit),
+                            background = Color.Transparent,
+                            foreground = colors.muted,
+                            monospace = true,
+                            dashedBorder = colors.dash,
                         )
                     }
                 }
@@ -87,10 +113,11 @@ fun StepCard(
             }
 
             Box(
-                modifier = Modifier
-                    .size(26.dp)
-                    .clip(RoundedCornerShape(13.dp))
-                    .clickable(onClick = onDelete),
+                modifier =
+                    Modifier
+                        .size(26.dp)
+                        .clip(RoundedCornerShape(13.dp))
+                        .clickable(onClick = onDelete),
                 contentAlignment = Alignment.Center,
             ) {
                 Text("×", color = colors.muted3, fontSize = 16.sp)
@@ -99,16 +126,19 @@ fun StepCard(
 
         if (turn != null) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(colors.accentFaint, RoundedCornerShape(11.dp))
-                    .padding(horizontal = 10.dp, vertical = 9.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .background(colors.accentFaint, RoundedCornerShape(11.dp))
+                        .padding(horizontal = 10.dp, vertical = 9.dp),
                 horizontalArrangement = Arrangement.spacedBy(9.dp),
             ) {
                 Text("↩", color = colors.accent, fontSize = 14.sp)
                 Text(
                     Formatting.turnaroundMarkerText(turn, stepCount, unit, step.measure),
-                    color = colors.accentFg, fontSize = 11.5.sp, lineHeight = 16.sp,
+                    color = colors.accentFg,
+                    fontSize = 11.5.sp,
+                    lineHeight = 16.sp,
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -127,11 +157,12 @@ private fun Chip(
 ) {
     val cornerDp = 8.dp
     Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(cornerDp))
-            .background(background)
-            .let { m -> if (dashedBorder != null) m.dashedBorder(dashedBorder, cornerDp) else m }
-            .padding(horizontal = 9.dp, vertical = 4.dp),
+        modifier =
+            Modifier
+                .clip(RoundedCornerShape(cornerDp))
+                .background(background)
+                .let { m -> if (dashedBorder != null) m.dashedBorder(dashedBorder, cornerDp) else m }
+                .padding(horizontal = 9.dp, vertical = 4.dp),
     ) {
         Text(
             text,
