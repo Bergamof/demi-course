@@ -5,7 +5,6 @@ import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ktlint)
@@ -74,12 +73,12 @@ val releaseStoreFile = signingSecret("storeFile", "ANDROID_KEYSTORE_FILE")
 
 android {
     namespace = "com.demicourse.seance"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.demicourse.seance"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 37
         // Defaults; androidComponents.onVariants (below) replaces them with the
         // values of whichever variant is actually being built.
         versionCode = releaseVersionCode
@@ -109,14 +108,15 @@ android {
             resValue("string", "app_name", "Demi Course")
             buildConfigField("String", "APP_VERSION_NAME", "\"$releaseVersionName\"")
             signingConfig = signingConfigs.findByName("release")
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 
     buildFeatures {

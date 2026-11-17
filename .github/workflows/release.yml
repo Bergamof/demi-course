@@ -42,11 +42,11 @@ jobs:
 
       # The action's default package set still includes `tools`, which no longer
       # exists in the SDK repository and fails the whole step, so the packages
-      # compileSdk 35 needs are spelled out.
+      # compileSdk 37 needs are spelled out.
       - name: Set up Android SDK
         uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
         with:
-          packages: "platform-tools platforms;android-35 build-tools;35.0.0"
+          packages: "platform-tools platforms;android-37 build-tools;36.0.0"
 
       - name: Compute version
         id: version
