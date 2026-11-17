@@ -9,9 +9,13 @@ voir `CLAUDE.md` § Variantes et versions.
 ### Ajouté
 - Équipe d'agents spécialistes (`.claude/agents/`), CI de vérification des PR (lint ktlint, tests, build, scan de secrets) avec compte rendu commenté, Dependabot, `.editorconfig`.
 - Libellés TalkBack, rôles et cibles tactiles de 48 dp, libellés de champs, bordures de focus et d'erreur, confirmation avant réinitialisation de la séance.
+- Réglages : demi-tour à mi-distance ou mi-durée, unité min/km ou min/mile ; bandeau « Annuler » après la suppression d'une étape.
 - Somme SHA-256 publiée avec l'APK de chaque release.
 
 ### Modifié
+- Toolchain : AGP 9.5.1, Gradle 9.7.1, Kotlin 2.4.21, JDK 25 (bytecode Java 21), compileSdk/targetSdk 37, Compose BOM 2026.09.00 et AndroidX à jour.
+- R8 activé sur la release.
+- Un demi-tour pile à la frontière de deux segments est placé au début du suivant.
 - Palette : contrastes de `muted2`/`muted3` relevés pour atteindre 4,5 : 1.
 - Actions GitHub épinglées par SHA, permissions des workflows réduites au strict nécessaire.
 - L'état enregistré est lu une seule fois au démarrage (plus d'écrasement par le flux DataStore).

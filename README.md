@@ -10,7 +10,7 @@ Une application Android permettant de configurer une séance de course à pieds 
 
 ## Prérequis et environnement
 
-Le projet cible Java 17. La version du JDK est figée dans `.sdkmanrc` (source de
+Le projet s'exécute sur Java 25 (dernière LTS) et produit du bytecode Java 21. La version du JDK est figée dans `.sdkmanrc` (source de
 vérité, lue aussi par la CI) pour [SDKMAN](https://sdkman.io) (installation :
 <https://sdkman.io/install>) :
 
@@ -18,9 +18,9 @@ vérité, lue aussi par la CI) pour [SDKMAN](https://sdkman.io) (installation :
 2. L'activer dans le shell courant : `sdk env` (et `sdk env clear` pour revenir en arrière).
 3. Bascule **automatique** à l'entrée dans le dossier : mettre `sdkman_auto_env=true`
    dans `~/.sdkman/etc/config`.
-4. Vérifier : `java -version` doit afficher `17.0.13` (Temurin).
+4. Vérifier : `java -version` doit afficher `25.0.5` (Temurin).
 
-Un SDK Android (plateforme 35) est nécessaire pour compiler `app` ; `domain` n'a besoin que du JDK.
+Un SDK Android (plateforme 37.0, build-tools 36.0.0) est nécessaire pour compiler `app` ; `domain` n'a besoin que du JDK.
 
 ## Build, tests, lint
 
@@ -171,6 +171,6 @@ Prérequis :
 - un SDK Android complet pour la compilation — le paquet `adb` seul ne suffit
   pas. Le script le cherche via `ANDROID_HOME`, `ANDROID_SDK_ROOT`, `sdk.dir`
   dans `local.properties`, le chemin d'`adb`, puis `~/Android/Sdk` ;
-- un JDK 17 (voir `.sdkmanrc` ci-dessus) ;
+- un JDK 25 (voir `.sdkmanrc` ci-dessus) ;
 - sur le téléphone : options développeur activées et « débogage USB » autorisé
   pour cet ordinateur.
