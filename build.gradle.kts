@@ -1,9 +1,5 @@
-// Kotlin plugins are declared once here (apply false) so every module shares the same copy on the
-// classpath, which AGP's built-in Kotlin requires. The Android Gradle Plugin is deliberately NOT
-// declared here: `:domain:test` must configure and run without resolving it (see CLAUDE.md,
-// « Environnement »).
-plugins {
-    alias(libs.plugins.kotlin.jvm) apply false
-    alias(libs.plugins.kotlin.compose) apply false
-    alias(libs.plugins.kotlin.serialization) apply false
-}
+// Intentionally empty: each module applies its own plugins (see app/build.gradle.kts and
+// domain/build.gradle.kts). Keeping the root build script free of plugin declarations means
+// `:domain:test` can configure and run without ever touching the Android Gradle Plugin
+// classpath (relevant if google()'s Maven repo isn't reachable in a given environment,
+// e.g. a network-restricted CI sandbox — see CLAUDE.md, « Environnement »).
