@@ -1,17 +1,16 @@
 name: Release
 
-# Every arrival on main (a merged PR, a direct push) publishes a GitHub
-# release: a "yyyy.MM.dd-n" tag where n is that day's publication rank, with the
-# prod APK attached.
+# A release is published only on manual trigger (Actions tab > Release > Run
+# workflow, or `gh workflow run release.yml`): a "yyyy.MM.dd-n" tag where n is
+# that day's publication rank, with the prod APK attached. Merging to main
+# publishes nothing.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: write
 
-# Two merges close together would compute the same rank if they ran in
+# Two triggers close together would compute the same rank if they ran in
 # parallel, so they are serialized.
 concurrency:
   group: release-main
@@ -19,6 +18,9 @@ concurrency:
 
 jobs:
   release:
+    # The release is cut from main only, even if another branch is picked in
+    # the "Run workflow" form.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
