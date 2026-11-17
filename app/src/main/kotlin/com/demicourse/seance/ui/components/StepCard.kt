@@ -19,10 +19,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.demicourse.domain.PaceMath
 import com.demicourse.domain.PaceUnit
 import com.demicourse.domain.StepSpec
 import com.demicourse.domain.TurnPoint
@@ -36,7 +41,6 @@ fun StepCard(
     index: Int,
     unit: PaceUnit,
     turn: TurnPoint?,
-    stepCount: Int,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
@@ -63,7 +67,10 @@ fun StepCard(
             }
 
             Column(
-                modifier = Modifier.weight(1f).clickable(onClick = onEdit),
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .clickable(onClickLabel = "Modifier l’étape ${index + 1}", onClick = onEdit),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Row(
@@ -71,8 +78,7 @@ fun StepCard(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
-                        com.demicourse.domain.PaceMath
-                            .autoName(step, unit),
+                        PaceMath.autoName(step, unit),
                         color = colors.fg,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
@@ -112,15 +118,17 @@ fun StepCard(
                 Text(Formatting.totalsText(step, unit), color = colors.muted2, fontSize = 12.sp)
             }
 
+            val deleteLabel = "Supprimer l’étape ${index + 1}"
             Box(
                 modifier =
                     Modifier
-                        .size(26.dp)
-                        .clip(RoundedCornerShape(13.dp))
-                        .clickable(onClick = onDelete),
+                        .size(MIN_TOUCH_TARGET)
+                        .clip(RoundedCornerShape(MIN_TOUCH_TARGET / 2))
+                        .clickable(onClickLabel = deleteLabel, role = Role.Button, onClick = onDelete)
+                        .semantics { contentDescription = deleteLabel },
                 contentAlignment = Alignment.Center,
             ) {
-                Text("×", color = colors.muted3, fontSize = 16.sp)
+                Text("×", color = colors.muted3, fontSize = 18.sp, modifier = Modifier.clearAndSetSemantics {})
             }
         }
 
@@ -133,9 +141,9 @@ fun StepCard(
                         .padding(horizontal = 10.dp, vertical = 9.dp),
                 horizontalArrangement = Arrangement.spacedBy(9.dp),
             ) {
-                Text("↩", color = colors.accent, fontSize = 14.sp)
+                Text("↩", color = colors.accent, fontSize = 14.sp, modifier = Modifier.clearAndSetSemantics {})
                 Text(
-                    Formatting.turnaroundMarkerText(turn, stepCount, unit, step.measure),
+                    Formatting.turnaroundMarkerText(turn, unit, step.measure),
                     color = colors.accentFg,
                     fontSize = 11.5.sp,
                     lineHeight = 16.sp,

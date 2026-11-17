@@ -13,6 +13,7 @@
 # l'identité de l'application pour Android : sauvegardez-les hors du dépôt.
 #
 set -euo pipefail
+umask 077
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PROPS="$ROOT_DIR/keystore.properties"
@@ -311,7 +312,7 @@ printf '%s  GitHub n'"'"'affiche jamais la valeur d'"'"'un secret, seulement son
 
 cat <<EOF
 
-${C_BOLD}Terminé.${C_RESET} Le prochain merge sur main publiera une release avec un APK signé.
+${C_BOLD}Terminé.${C_RESET} Les prochaines releases (workflow « Release », lancé à la main) auront un APK signé.
 
 ${C_YELLOW}À sauvegarder hors du dépôt${C_RESET} (gestionnaire de mots de passe, disque chiffré) :
   • $KEYSTORE

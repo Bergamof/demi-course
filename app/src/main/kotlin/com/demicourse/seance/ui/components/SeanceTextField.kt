@@ -28,6 +28,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -40,8 +42,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.demicourse.seance.ui.DraftErrors
 import com.demicourse.seance.ui.FieldKey
 import com.demicourse.seance.ui.SheetState
+import com.demicourse.seance.ui.fieldOrder
 import com.demicourse.seance.ui.theme.LocalSeanceColors
 import kotlinx.coroutines.delay
 
@@ -98,6 +102,15 @@ fun SeanceTextField(
         }
     }
 
+    val isLastField = fieldOrder(sheet).lastOrNull() == field
+    val borderColor =
+        when {
+            hasError(sheet.errors, field) -> colors.danger
+            focused -> colors.accent
+            else -> colors.line2
+        }
+    val borderWidth = if (focused || hasError(sheet.errors, field)) 2.dp else 1.dp
+
     val fontFamily = if (monospace) FontFamily.Monospace else FontFamily.Default
     val style = TextStyle(color = colors.fg, fontSize = fontSize, fontFamily = fontFamily, textAlign = textAlign)
 
@@ -110,6 +123,7 @@ fun SeanceTextField(
             },
             modifier =
                 Modifier
+                    .semantics { contentDescription = fieldLabel(field) }
                     .focusRequester(controller.requesterFor(field))
                     .bringIntoViewRequester(bringIntoView)
                     .onFocusChanged {
@@ -130,7 +144,7 @@ fun SeanceTextField(
                         } else {
                             KeyboardCapitalization.None
                         },
-                    imeAction = ImeAction.Next,
+                    imeAction = if (isLastField) ImeAction.Done else ImeAction.Next,
                 ),
             keyboardActions = KeyboardActions(onNext = { controller.advance(sheet, selectAll = true, onSubmit) }),
             decorationBox = { inner ->
@@ -150,7 +164,7 @@ fun SeanceTextField(
                 modifier
                     .height(height)
                     .background(colors.field, RoundedCornerShape(12.dp))
-                    .border(1.dp, colors.line2, RoundedCornerShape(12.dp))
+                    .border(borderWidth, borderColor, RoundedCornerShape(12.dp))
                     .padding(horizontal = 12.dp),
             contentAlignment = Alignment.CenterStart,
         ) { core() }
@@ -158,3 +172,30 @@ fun SeanceTextField(
         Box(modifier = modifier) { core() }
     }
 }
+
+/** What a screen reader says for a field: the visible label sits in a neighbouring [Text], not on the field. */
+private fun fieldLabel(field: FieldKey): String =
+    when (field) {
+        FieldKey.TEMPLATE_NAME -> "Nom du modèle"
+        FieldKey.VALUE -> "Longueur de l’étape"
+        FieldKey.PACE -> "Allure"
+        FieldKey.PACE_MAX -> "Allure maximale"
+        FieldKey.REPS -> "Nombre de répétitions"
+        FieldKey.REC_DUR -> "Durée de récupération"
+        FieldKey.REC_PACE -> "Allure de récupération"
+        FieldKey.REC_PACE_MAX -> "Allure de récupération maximale"
+    }
+
+private fun hasError(
+    errors: DraftErrors,
+    field: FieldKey,
+): Boolean =
+    when (field) {
+        FieldKey.TEMPLATE_NAME -> errors.templateName != null
+        FieldKey.VALUE -> errors.value != null
+        FieldKey.PACE -> errors.pace != null
+        FieldKey.PACE_MAX -> errors.paceMax != null
+        FieldKey.REPS -> errors.reps != null
+        FieldKey.REC_DUR -> errors.recDur != null
+        FieldKey.REC_PACE, FieldKey.REC_PACE_MAX -> errors.recPace != null
+    }

@@ -3,6 +3,7 @@ package com.demicourse.seance.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.demicourse.domain.AppSettings
+import com.demicourse.domain.MAX_REPS
 import com.demicourse.domain.Measure
 import com.demicourse.domain.PaceMath
 import com.demicourse.domain.PaceMode
@@ -13,7 +14,9 @@ import com.demicourse.seance.data.SeanceRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 class SeanceViewModel(
     private val repository: SeanceRepository,
@@ -23,15 +26,16 @@ class SeanceViewModel(
 
     init {
         viewModelScope.launch {
-            repository.data.collect { data ->
-                _state.value =
-                    _state.value.copy(
-                        steps = data.steps,
-                        templates = data.templates,
-                        settings = data.settings,
-                        loaded = true,
-                    )
-            }
+            // Read once: this view model is the only writer, so the in-memory state is the source of
+            // truth and the DataStore a mirror. Collecting it would replay stale blobs over newer state.
+            val data = repository.data.first()
+            _state.value =
+                _state.value.copy(
+                    steps = data.steps,
+                    templates = data.templates,
+                    settings = data.settings,
+                    loaded = true,
+                )
         }
     }
 
@@ -197,7 +201,7 @@ class SeanceViewModel(
     fun bumpReps(delta: Int) =
         updateDraftClearingError(FieldKey.REPS) { d ->
             val cur = (d.reps.toIntOrNull() ?: 1).coerceAtLeast(1)
-            d.copy(reps = (cur + delta).coerceIn(1, 99).toString())
+            d.copy(reps = (cur + delta).coerceIn(1, MAX_REPS).toString())
         }
 
     fun applyTemplate(template: StepSpec) =
@@ -226,14 +230,17 @@ class SeanceViewModel(
 
     // ── validation & submit ───────────────────────────────────────
 
-    fun validate(sheet: SheetState): DraftErrors {
+    private fun paceError(
+        mode: PaceMode,
+        pace: String,
+        paceMax: String,
+    ): String? =
+        PaceMath.parseMmSs(pace).error ?: if (mode == PaceMode.RANGE) PaceMath.parseMmSs(paceMax).error else null
+
+    private fun validate(sheet: SheetState): DraftErrors {
         val d = sheet.draft
         if (sheet.type == SheetType.SETTINGS) {
-            var recPaceErr = PaceMath.parseMmSs(d.recPace).error
-            if (d.recPaceMode == PaceMode.RANGE) {
-                recPaceErr = recPaceErr ?: PaceMath.parseMmSs(d.recPaceMax).error
-            }
-            return DraftErrors(recPace = recPaceErr)
+            return DraftErrors(recPace = paceError(d.recPaceMode, d.recPace, d.recPaceMax))
         }
 
         val isTemplate = sheet.type == SheetType.TEMPLATE
@@ -253,36 +260,24 @@ class SeanceViewModel(
             }
             if (hasValue || !isTemplate) {
                 valueErr =
-                    if (d.measure ==
-                        Measure.DISTANCE
-                    ) {
-                        PaceMath.parseDistance(d.value).error
-                    } else {
-                        PaceMath.parseMmSs(d.value).error
+                    when (d.measure) {
+                        Measure.DISTANCE -> PaceMath.parseDistance(d.value).error
+                        Measure.DURATION -> PaceMath.parseMmSs(d.value).error
                     }
             }
         }
 
-        val repsErr = if ((d.reps.toIntOrNull() ?: 0) >= 1) null else "Répétitions invalides"
+        val repsErr = if ((d.reps.toIntOrNull() ?: 0) in 1..MAX_REPS) null else "Répétitions : de 1 à $MAX_REPS"
 
         var recDurErr: String? = null
         var recPaceErr: String? = null
         if (d.recovery) {
             recDurErr = PaceMath.parseMmSs(d.recDur).error
-            recPaceErr = PaceMath.parseMmSs(d.recPace).error
-            if (d.recPaceMode == PaceMode.RANGE) {
-                recPaceErr = recPaceErr ?: PaceMath.parseMmSs(d.recPaceMax).error
-            }
+            recPaceErr = paceError(d.recPaceMode, d.recPace, d.recPaceMax)
         }
 
-        val templateNameErr =
-            if ((isTemplate || d.saveTemplate) &&
-                d.templateName.isBlank()
-            ) {
-                "Donnez un nom au modèle"
-            } else {
-                null
-            }
+        val needsTemplateName = isTemplate || d.saveTemplate
+        val templateNameErr = if (needsTemplateName && d.templateName.isBlank()) "Donnez un nom au modèle" else null
 
         return DraftErrors(
             pace = paceErr,
@@ -317,21 +312,7 @@ class SeanceViewModel(
             return true
         }
 
-        val base =
-            StepSpec(
-                id = "", // filled in below per-context
-                paceMode = d.paceMode,
-                pace = d.pace,
-                paceMax = if (d.paceMode == PaceMode.RANGE) d.paceMax else "",
-                measure = d.measure,
-                value = d.value,
-                reps = (d.reps.toIntOrNull() ?: 1).coerceAtLeast(1),
-                recovery = d.recovery,
-                recDur = if (d.recovery) d.recDur else "",
-                recPaceMode = d.recPaceMode,
-                recPace = if (d.recovery) d.recPace else "",
-                recPaceMax = if (d.recPaceMode == PaceMode.RANGE) d.recPaceMax else "",
-            )
+        val base = d.toStepSpec()
 
         if (sheet.type == SheetType.TEMPLATE) {
             val name = d.templateName.trim()
@@ -376,21 +357,14 @@ class SeanceViewModel(
             } else {
                 _state.value.steps + step
             }
-        persistTemplates(templates)
+        if (templates !== _state.value.templates) persistTemplates(templates)
         persistSteps(steps)
         update { it.copy(sheet = null) }
         return true
     }
-
-    companion object {
-        private var counter = 0L
-
-        private fun newId(prefix: String): String {
-            counter += 1
-            return "$prefix${System.currentTimeMillis()}$counter"
-        }
-    }
 }
+
+private fun newId(prefix: String): String = prefix + UUID.randomUUID()
 
 private fun fromStep(step: StepSpec): Draft =
     Draft(

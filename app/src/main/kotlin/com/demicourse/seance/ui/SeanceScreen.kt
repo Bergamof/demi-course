@@ -22,19 +22,32 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.demicourse.domain.SessionCalculator
 import com.demicourse.seance.ui.components.BottomSheetHost
+import com.demicourse.seance.ui.components.MIN_TOUCH_TARGET
+import com.demicourse.seance.ui.components.StepCard
 import com.demicourse.seance.ui.components.SummaryCard
 import com.demicourse.seance.ui.components.dashedBorder
 import com.demicourse.seance.ui.theme.LocalSeanceColors
@@ -43,7 +56,9 @@ import com.demicourse.seance.ui.theme.LocalSeanceColors
 fun SeanceScreen(viewModel: SeanceViewModel) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val colors = LocalSeanceColors.current
-    val session = SessionCalculator.compute(state.steps, state.settings.halfBy)
+    val session =
+        remember(state.steps, state.settings.halfBy) { SessionCalculator.compute(state.steps, state.settings.halfBy) }
+    var confirmingReset by remember { mutableStateOf(false) }
     val bottomBarInset = WindowInsets.safeDrawing.asPaddingValues().calculateBottomPadding()
 
     Box(modifier = Modifier.fillMaxSize().background(colors.bg)) {
@@ -57,7 +72,7 @@ fun SeanceScreen(viewModel: SeanceViewModel) {
                         WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
                     ),
         ) {
-            Header(onSettings = viewModel::openSettingsSheet, onReset = viewModel::resetSession)
+            Header(onSettings = viewModel::openSettingsSheet, onReset = { confirmingReset = true })
 
             SummaryCard(
                 session = session,
@@ -91,12 +106,11 @@ fun SeanceScreen(viewModel: SeanceViewModel) {
                 ) {
                     itemsIndexed(state.steps, key = { _, step -> step.id }) { index, step ->
                         val turn = session.turn?.takeIf { it.stepIndex == index }
-                        com.demicourse.seance.ui.components.StepCard(
+                        StepCard(
                             step = step,
                             index = index,
                             unit = state.settings.unit,
                             turn = turn,
-                            stepCount = state.steps.size,
                             onEdit = { viewModel.editStep(step) },
                             onDelete = { viewModel.deleteStep(step.id) },
                         )
@@ -122,13 +136,39 @@ fun SeanceScreen(viewModel: SeanceViewModel) {
                         .height(52.dp)
                         .clip(RoundedCornerShape(16.dp))
                         .background(colors.accent)
-                        .clickable(onClick = viewModel::openStepSheet),
+                        .clickable(role = Role.Button, onClick = viewModel::openStepSheet),
                 horizontalArrangement = Arrangement.spacedBy(9.dp, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("+", color = colors.onAccent, fontSize = 20.sp, fontWeight = FontWeight.Normal)
+                Text(
+                    "+",
+                    color = colors.onAccent,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Normal,
+                    modifier = Modifier.clearAndSetSemantics {},
+                )
                 Text("Ajouter une étape", color = colors.onAccent, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
             }
+        }
+
+        if (confirmingReset) {
+            AlertDialog(
+                onDismissRequest = { confirmingReset = false },
+                containerColor = colors.surface,
+                title = { Text("Réinitialiser la séance ?", color = colors.fg) },
+                text = { Text("Toutes les étapes seront supprimées. Les modèles sont conservés.", color = colors.fg2) },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            confirmingReset = false
+                            viewModel.resetSession()
+                        },
+                    ) { Text("Réinitialiser", color = colors.danger) }
+                },
+                dismissButton = {
+                    TextButton(onClick = { confirmingReset = false }) { Text("Annuler", color = colors.fg3) }
+                },
+            )
         }
 
         state.sheet?.let { sheet ->
@@ -154,13 +194,19 @@ private fun Header(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.Bottom,
     ) {
-        Column {
-            Text("Séance en cours", color = colors.fg, fontSize = 26.sp, fontWeight = FontWeight.SemiBold)
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                "Séance en cours",
+                color = colors.fg,
+                fontSize = 26.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.semantics { heading() },
+            )
             Text("Aller‑retour · demi‑tour à mi‑parcours", color = colors.muted, fontSize = 12.sp)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            CircleButton(symbol = "⚙", onClick = onSettings)
-            CircleButton(symbol = "↺", onClick = onReset)
+            CircleButton(symbol = "⚙", label = "Paramètres", onClick = onSettings)
+            CircleButton(symbol = "↺", label = "Réinitialiser la séance", onClick = onReset)
         }
     }
 }
@@ -168,19 +214,29 @@ private fun Header(
 @Composable
 private fun CircleButton(
     symbol: String,
+    label: String,
     onClick: () -> Unit,
 ) {
     val colors = LocalSeanceColors.current
     Box(
         modifier =
             Modifier
-                .size(34.dp)
-                .clip(RoundedCornerShape(17.dp))
-                .border(1.dp, colors.line3, RoundedCornerShape(17.dp))
-                .clickable(onClick = onClick),
+                .size(MIN_TOUCH_TARGET)
+                .clickable(onClickLabel = label, role = Role.Button, onClick = onClick)
+                .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
     ) {
-        Text(symbol, color = colors.muted, fontSize = 16.sp)
+        Box(
+            modifier =
+                Modifier
+                    .size(34.dp)
+                    .clip(RoundedCornerShape(17.dp))
+                    .border(1.dp, colors.line3, RoundedCornerShape(17.dp))
+                    .clearAndSetSemantics {},
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(symbol, color = colors.muted, fontSize = 16.sp)
+        }
     }
 }
 
@@ -201,7 +257,7 @@ private fun EmptyState(modifier: Modifier = Modifier) {
             color = colors.muted2,
             fontSize = 13.sp,
             lineHeight = 19.sp,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            textAlign = TextAlign.Center,
         )
     }
 }

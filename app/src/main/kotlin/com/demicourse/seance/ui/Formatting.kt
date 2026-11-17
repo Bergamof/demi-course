@@ -72,19 +72,12 @@ object Formatting {
      */
     fun turnaroundMarkerText(
         turn: TurnPoint,
-        stepCount: Int,
         unit: PaceUnit,
         measure: Measure,
     ): String {
         val repSuffix = if (turn.reps > 1) " de la répétition ${turn.rep} sur ${turn.reps}" else ""
         val where =
-            if (turn.kind ==
-                SegmentKind.REC
-            ) {
-                "pendant la récupération$repSuffix"
-            } else {
-                "pendant l’effort$repSuffix"
-            }
+            if (turn.kind == SegmentKind.REC) "pendant la récupération$repSuffix" else "pendant l’effort$repSuffix"
         val uD = PaceMath.unitDistanceLabel(unit)
         val byTime = turn.kind == SegmentKind.REC || measure == Measure.DURATION
         val rest = if (byTime) formatDuration(turn.restTime) else "${formatDistance(turn.restDistance)} $uD"
@@ -98,10 +91,14 @@ object Formatting {
             "(${formatDuration(turn.intoTime)}) · il reste $rest $restScope."
     }
 
-    fun totalDistanceText(
-        session: SessionResult,
-        unit: PaceUnit,
-    ): String = if (session.dMid > 0) formatRange(session.dMin, session.dMax, { formatDistance(it) }, 0.005) else "—"
+    fun totalDistanceText(session: SessionResult): String =
+        if (session.dMid >
+            0
+        ) {
+            formatRange(session.dMin, session.dMax, { formatDistance(it) }, 0.005)
+        } else {
+            "—"
+        }
 
     fun totalDurationText(session: SessionResult): String =
         if (session.tMid > 0) formatRange(session.tMin, session.tMax, { formatDuration(it) }, 1.0) else "—"
@@ -161,21 +158,7 @@ object Formatting {
             return "Un modèle peut ne définir que l’allure, que la longueur, ou les deux — " +
                 "laissez vide ce que vous voulez remplir plus tard."
         }
-        val step =
-            StepSpec(
-                id = "",
-                paceMode = draft.paceMode,
-                pace = draft.pace,
-                paceMax = draft.paceMax,
-                measure = draft.measure,
-                value = draft.value,
-                reps = draft.reps.toIntOrNull() ?: 1,
-                recovery = draft.recovery,
-                recDur = draft.recDur,
-                recPaceMode = draft.recPaceMode,
-                recPace = draft.recPace,
-                recPaceMax = draft.recPaceMax,
-            )
+        val step = draft.toStepSpec()
         val m = PaceMath.metrics(step)
         if (!m.ok) return "Allures et durées au format mm.ss — 1.30 = 1 min 30 s, 2.1 = 2 min 1 s."
         val uD = PaceMath.unitDistanceLabel(unit)

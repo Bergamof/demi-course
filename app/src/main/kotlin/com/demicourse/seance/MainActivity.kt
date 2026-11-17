@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -18,6 +19,8 @@ import com.demicourse.seance.ui.SeanceScreen
 import com.demicourse.seance.ui.SeanceViewModel
 import com.demicourse.seance.ui.theme.LocalSeanceColors
 import com.demicourse.seance.ui.theme.SeanceTheme
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,14 +35,13 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun DemiCourseApp(repository: SeanceRepository) {
-    val factory =
-        viewModelFactory {
-            initializer { SeanceViewModel(repository) }
-        }
+    val factory = remember(repository) { viewModelFactory { initializer { SeanceViewModel(repository) } } }
     val viewModel: SeanceViewModel = viewModel(factory = factory)
-    val state by viewModel.state.collectAsStateWithLifecycle()
+    val theme by remember(viewModel) {
+        viewModel.state.map { it.settings.theme }.distinctUntilChanged()
+    }.collectAsStateWithLifecycle(initialValue = viewModel.state.value.settings.theme)
 
-    SeanceTheme(themeChoice = state.settings.theme) {
+    SeanceTheme(themeChoice = theme) {
         Surface(modifier = Modifier.fillMaxSize(), color = LocalSeanceColors.current.bg) {
             SeanceScreen(viewModel)
         }

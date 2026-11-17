@@ -16,6 +16,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -157,8 +162,18 @@ fun SettingsBody(
                             fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
                         )
                     }
-                    IconSquare(symbol = "✎", color = colors.fg3, onClick = { onEditTemplate(tpl) })
-                    IconSquare(symbol = "×", color = colors.danger, onClick = { onDeleteTemplate(tpl.id) })
+                    IconSquare(
+                        symbol = "✎",
+                        label = "Modifier le modèle ${tpl.name}",
+                        color = colors.fg3,
+                        onClick = { onEditTemplate(tpl) },
+                    )
+                    IconSquare(
+                        symbol = "×",
+                        label = "Supprimer le modèle ${tpl.name}",
+                        color = colors.danger,
+                        onClick = { onDeleteTemplate(tpl.id) },
+                    )
                 }
             }
             if (templates.isEmpty()) {
@@ -170,7 +185,7 @@ fun SettingsBody(
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
                         .dashedBorder(colors.dash, 12.dp)
-                        .clickable(onClick = onNewTemplate)
+                        .clickable(role = Role.Button, onClick = onNewTemplate)
                         .padding(vertical = 10.dp),
                 contentAlignment = Alignment.Center,
             ) {
@@ -193,19 +208,29 @@ fun SettingsBody(
 @Composable
 private fun IconSquare(
     symbol: String,
-    color: androidx.compose.ui.graphics.Color,
+    label: String,
+    color: Color,
     onClick: () -> Unit,
 ) {
     val colors = LocalSeanceColors.current
     Box(
         modifier =
             Modifier
-                .size(34.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(colors.surface2)
-                .clickable(onClick = onClick),
+                .size(MIN_TOUCH_TARGET)
+                .clickable(onClickLabel = label, role = Role.Button, onClick = onClick)
+                .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
     ) {
-        Text(symbol, color = color, fontSize = 14.sp)
+        Box(
+            modifier =
+                Modifier
+                    .size(34.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(colors.surface2)
+                    .clearAndSetSemantics {},
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(symbol, color = color, fontSize = 14.sp)
+        }
     }
 }
