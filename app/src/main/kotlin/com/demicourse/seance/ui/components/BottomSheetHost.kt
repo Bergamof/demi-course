@@ -30,6 +30,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.demicourse.domain.FieldKey
+import com.demicourse.domain.Formatting
 import com.demicourse.domain.HalfBy
 import com.demicourse.domain.PaceUnit
 import com.demicourse.domain.SheetState
@@ -238,8 +239,7 @@ private fun TemplatePicker(
                 ) {
                     Text(tpl.name, color = colors.fg2, fontSize = 13.sp)
                     Text(
-                        com.demicourse.seance.ui.Formatting
-                            .templateHint(tpl, unit),
+                        Formatting.templateHint(tpl, unit),
                         color = colors.muted2,
                         fontSize = 11.sp,
                         fontFamily = FontFamily.Monospace,
