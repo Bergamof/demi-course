@@ -23,9 +23,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,6 +50,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.demicourse.domain.Formatting
 import com.demicourse.domain.SessionCalculator
 import com.demicourse.seance.ui.components.BottomSheetHost
 import com.demicourse.seance.ui.components.MIN_TOUCH_TARGET
@@ -59,6 +66,18 @@ fun SeanceScreen(viewModel: SeanceViewModel) {
     val session =
         remember(state.steps, state.settings.halfBy) { SessionCalculator.compute(state.steps, state.settings.halfBy) }
     var confirmingReset by remember { mutableStateOf(false) }
+    val snackbarHost = remember { SnackbarHostState() }
+    // A deletion is offered for undoing for a few seconds; acting or timing out ends the offer.
+    LaunchedEffect(state.lastDeleted) {
+        if (state.lastDeleted == null) return@LaunchedEffect
+        val result =
+            snackbarHost.showSnackbar(
+                message = "Étape supprimée",
+                actionLabel = "Annuler",
+                duration = SnackbarDuration.Short,
+            )
+        if (result == SnackbarResult.ActionPerformed) viewModel.undoDelete() else viewModel.dismissUndo()
+    }
     val bottomBarInset = WindowInsets.safeDrawing.asPaddingValues().calculateBottomPadding()
 
     Box(modifier = Modifier.fillMaxSize().background(colors.bg)) {
@@ -151,6 +170,18 @@ fun SeanceScreen(viewModel: SeanceViewModel) {
             }
         }
 
+        SnackbarHost(
+            hostState = snackbarHost,
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 84.dp + bottomBarInset),
+        ) { data ->
+            Snackbar(
+                snackbarData = data,
+                containerColor = colors.fg,
+                contentColor = colors.bg,
+                actionColor = colors.accent,
+            )
+        }
+
         if (confirmingReset) {
             AlertDialog(
                 onDismissRequest = { confirmingReset = false },
@@ -177,6 +208,7 @@ fun SeanceScreen(viewModel: SeanceViewModel) {
                 templates = state.templates,
                 unit = state.settings.unit,
                 themeChoice = state.settings.theme,
+                halfBy = state.settings.halfBy,
                 viewModel = viewModel,
             )
         }

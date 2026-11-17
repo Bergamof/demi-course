@@ -27,11 +27,11 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.demicourse.domain.Formatting
 import com.demicourse.domain.PaceMath
 import com.demicourse.domain.PaceUnit
 import com.demicourse.domain.StepSpec
 import com.demicourse.domain.TurnPoint
-import com.demicourse.seance.ui.Formatting
 import com.demicourse.seance.ui.theme.LocalSeanceColors
 
 @OptIn(ExperimentalLayoutApi::class)

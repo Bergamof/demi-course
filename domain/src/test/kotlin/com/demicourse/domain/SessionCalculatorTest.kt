@@ -79,28 +79,42 @@ class SessionCalculatorTest {
     }
 
     @Test
-    fun `halving can pick a run or a recovery depending on the setting`() {
-        // 1 km at 4.00 (240 s) then a 60 s recovery at 10.00 (0.1 km): total 1.1 km, 300 s.
-        // By distance the middle (0.55 km) is inside the run; by duration (150 s) it is too, but
-        // with a 2-rep step the second half starts after the first recovery.
+    fun `halving can land in a run or in a recovery depending on the setting`() {
+        // 1 km at 4.00 (240 s), then a 10 min recovery at 20.00 (0.5 km): 1.5 km and 840 s in all.
         val step =
             StepSpec(
                 id = "h1",
                 pace = "4.00",
                 measure = Measure.DISTANCE,
                 value = "1",
+                recovery = true,
+                recDur = "10.00",
+                recPace = "20.00",
+            )
+        // By distance the middle is 0.75 km: inside the run. By duration it is 420 s: inside the recovery.
+        assertEquals(SegmentKind.RUN, SessionCalculator.compute(listOf(step), HalfBy.DISTANCE).turn!!.kind)
+        assertEquals(SegmentKind.REC, SessionCalculator.compute(listOf(step), HalfBy.DURATION).turn!!.kind)
+    }
+
+    @Test
+    fun `a turnaround exactly on a segment boundary belongs to the start of the next segment`() {
+        // 2 x (1 km + 0.5 km of recovery): the middle, 1.5 km, is the end of the first recovery.
+        val step =
+            StepSpec(
+                id = "b1",
+                pace = "4.00",
+                measure = Measure.DISTANCE,
+                value = "1",
                 reps = 2,
                 recovery = true,
-                recDur = "1.00",
+                recDur = "5.00",
                 recPace = "10.00",
             )
-        val byDist = SessionCalculator.compute(listOf(step), HalfBy.DISTANCE).turn!!
-        val byDur = SessionCalculator.compute(listOf(step), HalfBy.DURATION).turn!!
-        // 2.2 km total -> 1.1 km: exactly the end of rep 1 recovery, hosted by the recovery segment.
-        assertEquals(SegmentKind.REC, byDist.kind)
-        // 600 s total -> 300 s: the end of rep 1 recovery too (240 + 60).
-        assertEquals(SegmentKind.REC, byDur.kind)
-        assertEquals(1, byDur.rep)
+        val turn = SessionCalculator.compute(listOf(step), HalfBy.DISTANCE).turn!!
+        assertEquals(SegmentKind.RUN, turn.kind)
+        assertEquals(2, turn.rep)
+        assertEquals(0.0, turn.intoDistance, 1e-6)
+        assertEquals(1.0, turn.restDistance, 1e-6)
     }
 
     @Test
@@ -161,20 +175,20 @@ class SessionCalculatorTest {
                 pace = "4.00",
                 measure = Measure.DISTANCE,
                 value = "1",
-                reps = 2,
+                reps = 3,
                 recovery = true,
-                recDur = "5.00",
+                recDur = "20.00",
                 recPaceMode = PaceMode.SINGLE,
                 recPace = "10.00",
             )
         val s = SessionCalculator.compute(listOf(withRecovery), HalfBy.DISTANCE)
-        // total distance = 2 * (1 + 0.5) = 3 km; half = 1.5 km, which falls inside the first recovery
-        // (after 1 km of running, the recovery covers km 1.0..1.5 of distance).
-        assertEquals(3.0, s.dMid, 1e-6)
+        // Each repetition is 1 km of run plus 2 km of recovery: 9 km in all, half 4.5 km.
+        // That is 1 km into the second recovery, which spans km 4.0..6.0.
+        assertEquals(9.0, s.dMid, 1e-6)
         val turn = s.turn!!
         assertEquals(SegmentKind.REC, turn.kind)
-        assertEquals(1, turn.rep)
-        assertEquals(1.5, turn.distance, 1e-6)
+        assertEquals(2, turn.rep)
+        assertEquals(4.5, turn.distance, 1e-6)
     }
 
     @Test

@@ -3,13 +3,27 @@ package com.demicourse.seance.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.demicourse.domain.AppSettings
+import com.demicourse.domain.Draft
+import com.demicourse.domain.DraftValidation
+import com.demicourse.domain.FieldKey
+import com.demicourse.domain.HalfBy
 import com.demicourse.domain.MAX_REPS
 import com.demicourse.domain.Measure
 import com.demicourse.domain.PaceMath
 import com.demicourse.domain.PaceMode
+import com.demicourse.domain.PaceUnit
 import com.demicourse.domain.RecoveryDefaults
+import com.demicourse.domain.SheetState
+import com.demicourse.domain.SheetType
 import com.demicourse.domain.StepSpec
+import com.demicourse.domain.TemplateReturn
 import com.demicourse.domain.ThemeChoice
+import com.demicourse.domain.blankDraft
+import com.demicourse.domain.toDraft
+import com.demicourse.domain.toStepSpec
+import com.demicourse.domain.withRecoveryDefaults
+import com.demicourse.domain.withRepsBumped
+import com.demicourse.domain.withTemplate
 import com.demicourse.seance.data.SeanceRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -60,13 +74,6 @@ class SeanceViewModel(
 
     // ── sheet lifecycle ───────────────────────────────────────────
 
-    private fun blankDraft(settings: AppSettings): Draft =
-        Draft(
-            recPaceMode = settings.recovery.recPaceMode,
-            recPace = settings.recovery.recPace,
-            recPaceMax = settings.recovery.recPaceMax,
-        )
-
     fun openStepSheet() {
         val settings = _state.value.settings
         update { it.copy(sheet = SheetState(type = SheetType.STEP, draft = blankDraft(settings))) }
@@ -74,20 +81,29 @@ class SeanceViewModel(
 
     fun editStep(step: StepSpec) {
         val settings = _state.value.settings
-        var draft = fromStep(step).copy(saveTemplate = false, templateName = "")
-        if (draft.recPace.isBlank()) {
-            draft =
-                draft.copy(
-                    recPaceMode = settings.recovery.recPaceMode,
-                    recPace = settings.recovery.recPace,
-                    recPaceMax = settings.recovery.recPaceMax,
-                )
-        }
+        var draft = step.toDraft().copy(saveTemplate = false, templateName = "")
+        if (draft.recPace.isBlank()) draft = draft.withRecoveryDefaults(settings.recovery)
         update { it.copy(sheet = SheetState(type = SheetType.STEP, draft = draft, editingStepId = step.id)) }
     }
 
     fun deleteStep(id: String) {
-        persistSteps(_state.value.steps.filterNot { it.id == id })
+        val steps = _state.value.steps
+        val index = steps.indexOfFirst { it.id == id }
+        if (index < 0) return
+        persistSteps(steps.filterNot { it.id == id })
+        update { it.copy(lastDeleted = DeletedStep(steps[index], index)) }
+    }
+
+    /** Puts the last deleted step back where it was. */
+    fun undoDelete() {
+        val deleted = _state.value.lastDeleted ?: return
+        val steps = _state.value.steps
+        persistSteps(steps.toMutableList().apply { add(deleted.index.coerceAtMost(size), deleted.step) })
+        update { it.copy(lastDeleted = null) }
+    }
+
+    fun dismissUndo() {
+        update { it.copy(lastDeleted = null) }
     }
 
     fun openTemplateSheet(existing: StepSpec? = null) {
@@ -95,7 +111,7 @@ class SeanceViewModel(
         val returnTo = if (current?.type == SheetType.SETTINGS) TemplateReturn.SETTINGS else TemplateReturn.STEP
         val draft =
             if (existing != null) {
-                fromStep(existing).copy(templateName = existing.name, saveTemplate = false)
+                existing.toDraft().copy(templateName = existing.name, saveTemplate = false)
             } else {
                 Draft(measure = Measure.DURATION)
             }
@@ -198,102 +214,22 @@ class SeanceViewModel(
 
     fun toggleSaveTemplate() = updateDraft { it.copy(saveTemplate = !it.saveTemplate) }
 
-    fun bumpReps(delta: Int) =
-        updateDraftClearingError(FieldKey.REPS) { d ->
-            val cur = (d.reps.toIntOrNull() ?: 1).coerceAtLeast(1)
-            d.copy(reps = (cur + delta).coerceIn(1, MAX_REPS).toString())
-        }
+    fun bumpReps(delta: Int) = updateDraftClearingError(FieldKey.REPS) { it.withRepsBumped(delta) }
 
-    fun applyTemplate(template: StepSpec) =
-        updateDraft { d ->
-            var next = d.copy(reps = template.reps.toString(), name = template.name)
-            if (template.pace.isNotBlank()) {
-                next = next.copy(paceMode = template.paceMode, pace = template.pace, paceMax = template.paceMax)
-            }
-            if (template.value.isNotBlank()) {
-                next = next.copy(measure = template.measure, value = template.value)
-            }
-            if (template.recovery) {
-                next =
-                    next.copy(
-                        recovery = true,
-                        recDur = template.recDur,
-                        recPaceMode = template.recPaceMode,
-                        recPace = template.recPace,
-                        recPaceMax = template.recPaceMax,
-                    )
-            }
-            next
-        }
+    fun applyTemplate(template: StepSpec) = updateDraft { it.withTemplate(template) }
 
     fun setTheme(choice: ThemeChoice) = persistSettings(_state.value.settings.copy(theme = choice))
 
+    fun setHalfBy(halfBy: HalfBy) = persistSettings(_state.value.settings.copy(halfBy = halfBy))
+
+    fun setUnit(unit: PaceUnit) = persistSettings(_state.value.settings.copy(unit = unit))
+
     // ── validation & submit ───────────────────────────────────────
-
-    private fun paceError(
-        mode: PaceMode,
-        pace: String,
-        paceMax: String,
-    ): String? =
-        PaceMath.parseMmSs(pace).error ?: if (mode == PaceMode.RANGE) PaceMath.parseMmSs(paceMax).error else null
-
-    private fun validate(sheet: SheetState): DraftErrors {
-        val d = sheet.draft
-        if (sheet.type == SheetType.SETTINGS) {
-            return DraftErrors(recPace = paceError(d.recPaceMode, d.recPace, d.recPaceMax))
-        }
-
-        val isTemplate = sheet.type == SheetType.TEMPLATE
-        val hasPace = d.pace.isNotBlank()
-        val hasValue = d.value.isNotBlank()
-
-        var paceErr: String? = null
-        var paceMaxErr: String? = null
-        var valueErr: String? = null
-
-        if (isTemplate && !hasPace && !hasValue) {
-            paceErr = "Renseignez au moins l’allure ou la longueur"
-        } else {
-            if (hasPace || !isTemplate) {
-                paceErr = PaceMath.parseMmSs(d.pace).error
-                if (d.paceMode == PaceMode.RANGE) paceMaxErr = PaceMath.parseMmSs(d.paceMax).error
-            }
-            if (hasValue || !isTemplate) {
-                valueErr =
-                    when (d.measure) {
-                        Measure.DISTANCE -> PaceMath.parseDistance(d.value).error
-                        Measure.DURATION -> PaceMath.parseMmSs(d.value).error
-                    }
-            }
-        }
-
-        val repsErr = if ((d.reps.toIntOrNull() ?: 0) in 1..MAX_REPS) null else "Répétitions : de 1 à $MAX_REPS"
-
-        var recDurErr: String? = null
-        var recPaceErr: String? = null
-        if (d.recovery) {
-            recDurErr = PaceMath.parseMmSs(d.recDur).error
-            recPaceErr = paceError(d.recPaceMode, d.recPace, d.recPaceMax)
-        }
-
-        val needsTemplateName = isTemplate || d.saveTemplate
-        val templateNameErr = if (needsTemplateName && d.templateName.isBlank()) "Donnez un nom au modèle" else null
-
-        return DraftErrors(
-            pace = paceErr,
-            paceMax = paceMaxErr,
-            value = valueErr,
-            reps = repsErr,
-            recDur = recDurErr,
-            recPace = recPaceErr,
-            templateName = templateNameErr,
-        )
-    }
 
     /** Validates the current sheet's draft, commits it if valid, and returns whether it committed. */
     fun submit(): Boolean {
         val sheet = _state.value.sheet ?: return false
-        val errors = validate(sheet)
+        val errors = DraftValidation.validate(sheet)
         if (!errors.isEmpty) {
             update { it.copy(sheet = sheet.copy(errors = errors)) }
             return false
@@ -365,19 +301,3 @@ class SeanceViewModel(
 }
 
 private fun newId(prefix: String): String = prefix + UUID.randomUUID()
-
-private fun fromStep(step: StepSpec): Draft =
-    Draft(
-        name = step.name,
-        paceMode = step.paceMode,
-        pace = step.pace,
-        paceMax = step.paceMax,
-        measure = step.measure,
-        value = step.value,
-        reps = step.reps.toString(),
-        recovery = step.recovery,
-        recDur = step.recDur,
-        recPaceMode = step.recPaceMode,
-        recPace = step.recPace,
-        recPaceMax = step.recPaceMax,
-    )

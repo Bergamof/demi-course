@@ -14,9 +14,9 @@ import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.isMetaPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
-import com.demicourse.seance.ui.FieldKey
-import com.demicourse.seance.ui.SheetState
-import com.demicourse.seance.ui.fieldOrder
+import com.demicourse.domain.FieldKey
+import com.demicourse.domain.SheetState
+import com.demicourse.domain.fieldOrder
 
 /**
  * Drives the editor sheet's keyboard flow, mirroring the prototype: plain Enter (or the

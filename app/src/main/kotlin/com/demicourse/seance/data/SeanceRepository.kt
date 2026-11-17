@@ -6,11 +6,10 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.demicourse.domain.AppSettings
 import com.demicourse.domain.SeanceData
+import com.demicourse.domain.SeanceJson
 import com.demicourse.domain.StepSpec
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 
 private val Context.dataStore by preferencesDataStore(name = "seance")
 
@@ -28,31 +27,24 @@ class SeanceRepository(
         val SETTINGS = stringPreferencesKey("settings_json")
     }
 
-    private val json = Json { ignoreUnknownKeys = true }
-
     val data: Flow<SeanceData> =
         context.dataStore.data.map { prefs ->
             SeanceData(
-                steps = prefs[Keys.STEPS].decodeListOrEmpty(),
-                templates = prefs[Keys.TEMPLATES].decodeListOrEmpty(),
-                settings =
-                    prefs[Keys.SETTINGS]?.let { runCatching { json.decodeFromString<AppSettings>(it) }.getOrNull() }
-                        ?: AppSettings(),
+                steps = SeanceJson.decodeSteps(prefs[Keys.STEPS]),
+                templates = SeanceJson.decodeSteps(prefs[Keys.TEMPLATES]),
+                settings = SeanceJson.decodeSettings(prefs[Keys.SETTINGS]),
             )
         }
 
-    private fun String?.decodeListOrEmpty(): List<StepSpec> =
-        this?.let { runCatching { json.decodeFromString<List<StepSpec>>(it) }.getOrNull() } ?: emptyList()
-
     suspend fun saveSteps(steps: List<StepSpec>) {
-        context.dataStore.edit { it[Keys.STEPS] = json.encodeToString(steps) }
+        context.dataStore.edit { it[Keys.STEPS] = SeanceJson.encodeSteps(steps) }
     }
 
     suspend fun saveTemplates(templates: List<StepSpec>) {
-        context.dataStore.edit { it[Keys.TEMPLATES] = json.encodeToString(templates) }
+        context.dataStore.edit { it[Keys.TEMPLATES] = SeanceJson.encodeSteps(templates) }
     }
 
     suspend fun saveSettings(settings: AppSettings) {
-        context.dataStore.edit { it[Keys.SETTINGS] = json.encodeToString(settings) }
+        context.dataStore.edit { it[Keys.SETTINGS] = SeanceJson.encodeSettings(settings) }
     }
 }

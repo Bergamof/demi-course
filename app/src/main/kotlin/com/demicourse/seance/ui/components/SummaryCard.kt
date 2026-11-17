@@ -17,9 +17,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.demicourse.domain.Formatting
 import com.demicourse.domain.PaceUnit
 import com.demicourse.domain.SessionResult
-import com.demicourse.seance.ui.Formatting
 import com.demicourse.seance.ui.theme.LocalSeanceColors
 
 @Composable

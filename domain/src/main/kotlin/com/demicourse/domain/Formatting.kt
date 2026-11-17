@@ -1,17 +1,9 @@
-package com.demicourse.seance.ui
+package com.demicourse.domain
 
-import com.demicourse.domain.Measure
-import com.demicourse.domain.PaceMath
 import com.demicourse.domain.PaceMath.formatDistance
 import com.demicourse.domain.PaceMath.formatDuration
 import com.demicourse.domain.PaceMath.formatMmSsField
 import com.demicourse.domain.PaceMath.formatRange
-import com.demicourse.domain.PaceMode
-import com.demicourse.domain.PaceUnit
-import com.demicourse.domain.SegmentKind
-import com.demicourse.domain.SessionResult
-import com.demicourse.domain.StepSpec
-import com.demicourse.domain.TurnPoint
 
 /** Display strings for the main screen and editor sheet — a direct port of the prototype's renderVals(). */
 object Formatting {
