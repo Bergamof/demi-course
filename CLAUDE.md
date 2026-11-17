@@ -1,75 +1,104 @@
-# CLAUDE.md
+# demi-course
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+App Android (Kotlin + Jetpack Compose) pour planifier **une** séance de course (étapes : allure cible, distance ou durée, répétitions, récupération) et calculer où faire demi-tour. Pas d'historique : une séance à la fois, stockée localement. Portée depuis un prototype Claude Design.
 
-## What this is
+Lire ce fichier suffit pour comprendre le projet ; n'ouvrir `chats/` et `project/` que pour trancher un comportement qui semble arbitraire :
+- `chats/chat1.md`, `chats/chat2.md` : conversation de conception, **source de vérité du « pourquoi »** (récupération après chaque répétition, Tab/Entrée, règles `mm.ss`).
+- `project/Séance.dc.html` : prototype HTML/JS (textes, espacements, formules de référence).
 
-An Android app (Kotlin + Jetpack Compose) for planning a single running session ("séance") — steps with target pace, distance/duration, repetitions, and optional recovery — and calculating where the halfway ("demi-tour") turnaround point falls. No history: one session at a time, persisted locally.
+## Stack
+- Kotlin 2.0.21, AGP 8.7.3, Gradle 8.14.3 (wrapper, somme SHA-256 vérifiée), Compose BOM 2024.12.01, `minSdk 26`, `compileSdk`/`targetSdk 35`.
+- JDK 17 (Temurin) — voir « Décisions techniques ». DataStore Preferences + kotlinx.serialization. Versions : `gradle/libs.versions.toml`.
+- Packages : `com.demicourse.domain`, `com.demicourse.seance`. Licence GPL-3.0.
 
-It was ported from a Claude Design HTML/JS prototype. The original design bundle is kept for reference:
-- `project/Séance.dc.html` — the prototype's full UI + logic (single-file, uses a tiny custom reactive runtime in `support.js`). Useful as a visual/behavioral reference when in doubt about exact copy, spacing, or a formula.
-- `chats/chat1.md`, `chats/chat2.md` — the design conversation. **This is the source of truth for *why* things work the way they do** (e.g. why recovery applies after every rep including the last, why Tab doesn't select text but Enter does, the exact mm.ss parsing rules). Read these before changing behavior that seems arbitrary.
+## Environnement
+- JDK épinglé dans `.sdkmanrc` (lu aussi par la CI via `java-version-file`) ; `sdk env install && sdk env` (auto avec `sdkman_auto_env=true`, détail dans le README).
+- Toute montée de version d'outil : `.sdkmanrc`, `compileOptions`/`jvmTarget` des deux modules et README dans le même commit.
+- **Limite du bac à sable cloud** : `dl.google.com` est bloqué, donc AGP et AndroidX ne se résolvent pas ; `:app:*` ne compile **pas** ici. `:domain:*` fonctionne (Maven Central peut répondre 429 : réessayer). La compilation de `app/` est vérifiée par la CI → toute modification de `app/` n'est « verte » qu'après le run CI de la PR.
 
-## Commands
+## Commandes
+- Lint : `./gradlew ktlintCheck` ; correction : `./gradlew ktlintFormat` (ktlint 1.8.0, règles dans `.editorconfig` ; `app` ne se formate pas ici, voir plus bas).
+- Tests : `./gradlew :domain:test` (une classe : `--tests "*PaceMathTest"`).
+- Build : `./gradlew :app:assembleDebug` (CI uniquement dans le cloud).
+- Installer sur téléphone (ADB) : `./scripts/deploy.sh` (`--help`).
 
-```
-./gradlew :domain:test                                    # run all domain unit tests
-./gradlew :domain:test --tests "com.demicourse.domain.PaceMathTest"   # one test class
-./gradlew :domain:test --tests "*SessionCalculatorTest"    # by class name pattern
-./gradlew :app:assembleDebug                               # build the app
-```
+## CI (`.github/workflows/`)
+- `ci.yml` sur chaque PR et push `main` : `lint` (ktlint), `test` (domain), `build` (APK debug), `security` (gitleaks) → job `report` (`if: always()`) qui commente la PR. Toute nouvelle vérification s'ajoute aussi aux `needs` de `report`.
+- `release.yml` : **manuel** (`workflow_dispatch`, `main` uniquement) ; tag `yyyy.MM.dd-N` + APK signé + `.sha256`. Merger sur `main` ne publie rien.
+- Actions épinglées par SHA (commentaire `# vX.Y.Z`), maintenues par Dependabot (`.github/dependabot.yml`, gradle + actions). Permissions minimales par job, `persist-credentials: false`.
+- Protéger `main` : jobs `lint`, `test`, `build`, `security` en checks obligatoires.
 
-There is no linter configured (no ktlint/detekt).
+## Équipe d'agents (`.claude/agents/`)
+| Agent | Rôle | Modèle | Écrit |
+|---|---|---|---|
+| Chef Bouillon (session principale) | seul développeur, expert Kotlin/Compose/Gradle/CI | session | oui |
+| `gardien-du-phare` | UX & accessibilité Android | sonnet | non |
+| `turbo-escargot` | performances | sonnet | non |
+| `cerbere-le-paranoiaque` | sécurité & CVE | opus | non |
+| `maniaque-du-plumeau` | clean code & architecture | sonnet | non |
+| `capitaine-assertion` | stratégie de tests | sonnet | non |
+| `madame-irma-des-versions` | versions & compatibilités | haiku | non |
 
-## Git conventions
+Les spécialistes ne font que des rapports (sévérité, `fichier:ligne`, recommandation) ; ne solliciter que ceux concernés par le changement ; jamais de suppression d'agent sans accord. Leur `model:` est explicite (jamais `inherit`) ; le changer seulement sur preuve et le consigner ici. Pas de `rest-en-paix` (pas d'API), pas de Lighthouse (pas de web : Android Lint/Accessibility Scanner à la place).
 
-- **Branch names say what the work is**: `claude/<sujet-en-quelques-mots>` — e.g. `claude/scroll-feuille-edition`, not a generated codename like `claude/laughing-cori-08wxn8`. Keep the `claude/` prefix so agent branches stay grouped; rename an auto-generated branch before the first push.
-- Commit messages are in French, present indicative third person, matching the existing history (`Ajoute un script…`, `Fixe les paquets…`).
-- **One session, at most one PR** unless asked otherwise. A second topic raised mid-session goes on the same branch as another commit and widens that PR's title — it does not get a branch and a PR of its own. Pick a branch name broad enough for the session's subject when more work is likely.
-
-## Variants and versioning
-
-`app/build.gradle.kts` computes both version names at configuration time; nothing is hardcoded.
-
-- **debug = the dev variant.** `applicationIdSuffix = ".dev"` and a `resValue` `app_name` of `Demi Course (dev)`, so a dev install sits next to a prod install instead of replacing it. `app_name` lives in the build script, **not** in `strings.xml` (a duplicate there is a build error). Version name is `dev-yyyy.MM.dd-HH.mm` (build time); version code is minutes since 2020, which only has to grow between two dev builds on the same machine.
-- **release = prod.** Version name is `yyyy.MM.dd-N` — publication date plus that day's publication rank. The rank comes from `.github/workflows/release.yml`, which counts the tags already published that day and passes `-PappVersionName`/`-PappVersionCode`. A local release build with no property falls back to rank `0`, meaning "never published". Version code is `yyMMddNN` (so N ≤ 99 per day — the workflow fails loudly past that).
-- Version name and code are applied per-variant through `androidComponents.onVariants` (the build-type DSL has no `versionName`); `BuildConfig.APP_VERSION_NAME` is set separately with `buildConfigField` per build type, and is what the settings sheet shows at the bottom.
-- A GitHub release (tag = version, APK attached) is published only by manually running the `Release` workflow (`workflow_dispatch`, `main` only) — merging to `main` publishes nothing. The APK is signed from `keystore.properties` or from `ANDROID_KEYSTORE_*` env vars fed by repo secrets; with neither, the build still produces an unsigned — uninstallable — APK, and the release notes say so. `scripts/setup-signing.sh` creates that key and pushes the secrets (`gh`), and is idempotent — it reuses an existing key rather than minting a new one, because a key change makes every already-installed copy un-upgradable.
-
-**Sandbox limitation:** this environment's network policy blocks `dl.google.com`, which is where the Android Gradle Plugin and all AndroidX/Compose artifacts live. `:domain:test` works here (pure Kotlin, only needs Maven Central). `:app:*` tasks cannot be resolved or built here — they need Android Studio or a CI runner with normal network access. Keep domain logic changes covered by `:domain:test` since that's the only thing verifiable in this environment; treat any `app/` change as unverified-by-build until it's compiled elsewhere.
+## Méthode de travail
+- Tâche non triviale : plan d'abord, « go » d'Adrien avant de coder ; écart significatif → resoumettre. Recommandation d'un spécialiste contestable → le chef tranche et justifie ; enjeu significatif → Adrien.
+- **Done** = CI verte sur le dernier commit poussé (suivre le run, lire les logs, corriger la cause racine). Interdit pour obtenir le vert : skipper un test, assouplir ktlint, `continue-on-error`, supprimer un job, baisser un seuil. Échec non lié : un seul relancement, puis diagnostic. CI inaccessible : « terminé localement, CI non vérifiée ».
+- Après un changement de `app/` : le formatage ktlint se fait via une copie de travail où `domain` pointe sur `app/src/main/kotlin` (`srcDir`), car `:app:ktlintFormat` ne se configure pas hors AGP ; ou laisser la CI signaler.
 
 ## Architecture
+Deux modules pour tester le calcul sans la toolchain Android ; chaque module applique ses propres plugins (pas de bloc `apply false` à la racine, ce qui permet à `:domain:test` de tourner sans AGP).
 
-Two Gradle modules, deliberately split so the math is testable without the Android toolchain:
+**`domain/`** (Kotlin pur, testé dans `domain/src/test`) :
+- `Models.kt` — `StepSpec` sert **à la fois** d'étape et de modèle (modèle = + `id`/`name`) : ne pas créer de type `Template`. `MAX_REPS = 99` borne les répétitions (saisie, validation et calcul).
+- `PaceMath.kt` — parsing/formatage `mm.ss` et distance, `piece()`/`metrics()` (allure simple ou plage × distance ou durée → enveloppe distance/temps). Allure = secondes par unité de distance ; étape en distance : `dMin == dMax` ; en durée : `tMin == tMax`.
+- `SessionCalculator.kt` — aplatit les étapes en segments effort/récupération, somme, puis cherche le demi-tour à la moitié de la distance **ou** de la durée (`HalfBy`). Un segment compte pour le **milieu** de son enveloppe : une plage d'allure ne l'élargit pas.
 
-- **`domain/`** — pure Kotlin, no Android dependency. All parsing, formatting, and the turnaround calculation live here as plain functions/objects, unit-tested in `domain/src/test`.
-- **`app/`** — Android/Compose UI, ViewModel, and DataStore persistence. Depends on `domain/`.
+**`app/`** (Compose) :
+- `data/SeanceRepository.kt` — seule persistance : un DataStore, trois blobs JSON (étapes, modèles, réglages). Lu **une fois** au démarrage par le ViewModel, qui est le seul écrivain (état mémoire = source de vérité).
+- `ui/SeanceViewModel.kt` + `ui/UiState.kt` — un seul `SheetState` pour une feuille réutilisée trois fois (`STEP`, `TEMPLATE`, `SETTINGS`). `fieldOrder(sheet)` liste les champs pertinents (change avec plage/récupération/« enregistrer comme modèle ») : **seule source de vérité** de la chaîne de focus. `Draft.toStepSpec()` est l'unique conversion brouillon → étape.
+- `ui/components/SheetFocusController.kt` + `SeanceTextField.kt` — clavier du prototype : Entrée (ou « suivant ») avance **et sélectionne** le texte, soumet au dernier champ ; Tab avance **sans** sélectionner (asymétrie voulue, voir `chats/chat1.md`). La sélection n'a lieu qu'à l'ouverture de la feuille ou à une avance explicite, jamais au simple clic dans un champ (bug du prototype corrigé : ne pas câbler select-all sur le gain de focus).
+- `ui/theme/Theme.kt` — `SeanceColors` (CompositionLocal) reflète 1:1 les variables CSS du prototype ; utiliser `LocalSeanceColors.current`, pas `MaterialTheme.colorScheme`.
+- `ui/Formatting.kt` — textes d'affichage (puces, totaux, marqueur de demi-tour), port de `renderVals()` ; à garder cohérent avec `PaceMath`/`SessionCalculator`.
+- Accessibilité : cibles tactiles ≥ 48 dp via `MIN_TOUCH_TARGET` (le dessin reste petit), `clickable(onClickLabel, role)`, glyphes décoratifs en `clearAndSetSemantics {}`, libellés de champ dérivés de `FieldKey` dans `SeanceTextField`.
 
-### `domain/` — the math
+## Règles fonctionnelles
+- `mm.ss` en **saisie** : `1.30` = 1 min 30 s ; un seul chiffre après le séparateur = unités (`2.1` = `2.01`) ; secondes ≥ 60 rejetées. En **affichage** : `3m02s`, `3m02s/km` (`formatDuration`, `formatMmSsField`), sans partie nulle — divergence voulue avec le prototype.
+- Le marqueur de demi-tour indique aussi le reste du **segment** (une répétition ou une récupération, jamais les répétitions suivantes : `TurnPoint.restDistance`/`restTime`). Unité : une récupération est toujours en temps ; un effort suit la `measure` de son étape → valeur exacte, pas dérivée de l'allure.
+- Récupération (si activée) après **chaque** répétition, la dernière comprise. Défaut : plage 9.00–11.00 (`AppSettings.recovery`, éditable dans les réglages, préremplit les nouvelles étapes).
+- Un modèle exige au moins l'allure **ou** la longueur. `applyTemplate` copie reps/nom toujours, allure/longueur/récupération seulement si définies.
+- Répétitions : 1 à 99 (message « Répétitions : de 1 à 99 »).
+- Thème `SYSTEM`/`LIGHT`/`DARK` dans `AppSettings.theme`. `AppSettings.unit` et `halfBy` n'ont pas d'UI aujourd'hui (valeurs par défaut km et distance).
 
-- `Models.kt` — `StepSpec` is the one shape used for **both a session step and a saved template** (same fields, templates just add `id`/`name`). Don't create a separate `Template` type; anything that needs to distinguish "is this a template" does so by context, not by type.
-- `PaceMath.kt` — `mm.ss` / distance parsing and formatting, and `piece()`/`metrics()` which resolve a pace (single or range) + length (distance or duration) into a distance/time envelope for one step. Pace is always seconds-per-distance-unit; distance-measured steps have `dMin == dMax` (only time varies across a pace range), duration-measured steps have `tMin == tMax` (only distance varies).
-- `SessionCalculator.kt` — flattens all steps into an ordered list of run/recovery segments (repeated per `reps`), sums totals, then walks the segments to find the turnaround at half of total distance **or** total duration (`HalfBy`, a user setting). The segment "mid" value (midpoint of a pace range's envelope) is what's used to place the turnaround — a pace range doesn't widen the search, it collapses to its midpoint.
+## Variantes et versions (`app/build.gradle.kts`, rien en dur)
+- **debug = dev** : `applicationIdSuffix ".dev"`, nom « Demi Course (dev) » (`resValue app_name`, **pas** dans `strings.xml`), version `dev-yyyy.MM.dd-HH.mm`, code = minutes depuis 2020.
+- **release = prod** : version `yyyy.MM.dd-N` (date de publication + rang du jour calculé par `release.yml` → `-PappVersionName/-PappVersionCode`), code `yyMMddNN` (N ≤ 99). Sans propriété : rang 0 = jamais publié.
+- Version appliquée par variante via `androidComponents.onVariants` ; `BuildConfig.APP_VERSION_NAME` (par type de build) s'affiche en bas des réglages.
+- Signature : `keystore.properties` ou variables `ANDROID_KEYSTORE_*` (secrets du dépôt) ; sans clé, APK non signé donc non installable (signalé dans les notes). `scripts/setup-signing.sh` crée la clé et pose les secrets ; idempotent, ne change jamais de clé (un changement rend les installations existantes non mettables à jour). Sauvegardes de clé ignorées par git.
 
-### `app/` — the UI
+## Décisions techniques
+- 2026-09 — `StepSpec` unique pour étape et modèle ; prototype Claude Design comme référence.
+- 2026-09 — Release uniquement manuelle (merge ≠ publication).
+- 2026-11 — Agents spécialistes et `ci.yml` introduits (skill `regles-projet`) ; ktlint adopté (formatage officiel, `Composable` exempté de la règle de nommage).
+- 2026-11 — **JDK 17 conservé** : AGP 8.7.3 / Kotlin 2.0.21 / Gradle 8.14 ne supportent pas Java 25 ; la LTS courante suppose une montée groupée AGP 9 + Kotlin 2.x + Gradle 9 + compileSdk 37 (non vérifiable hors CI), soumise à arbitrage d'Adrien.
+- 2026-11 — Pas de `Dockerfile` : app Android sans service, build natif sur runner GitHub (écart au skill, à confirmer par Adrien).
+- 2026-11 — Commits en **Conventional Commits anglais** (règle du skill), à la place du français d'avant ; l'historique antérieur reste en français.
 
-- `data/SeanceRepository.kt` — the only persistence: one DataStore Preferences file holding steps/templates/settings each as a JSON blob (kotlinx.serialization). No Room, no history — by design, there's only ever one current session.
-- `ui/SeanceViewModel.kt` + `ui/UiState.kt` — a single `SheetState` drives one bottom sheet reused for three purposes (`SheetType.STEP`, `TEMPLATE`, `SETTINGS`); which fields render and what "submit" does both branch on `sheet.type`. `fieldOrder(sheet)` is the list of currently-relevant fields (it changes as the user toggles pace-range/recovery/save-as-template) and is the single source of truth for the Tab/Enter focus chain — don't hardcode a different field order in the UI.
-- `ui/components/FocusChain.kt` (`SheetFocusController`) + `SeanceTextField.kt` — reproduce the prototype's keyboard behavior exactly: Enter (or the soft keyboard's "next") advances to the next field in `fieldOrder()` **and selects its text**; submits if it's the last field. Tab also advances but does **not** select — this asymmetry is intentional (ported from the prototype, see `chats/chat1.md`), not a bug. Selection only ever happens on sheet-open or on an explicit advance, never on a plain click-into-field (that was a prototype bug that got fixed — don't reintroduce it by wiring select-all to focus-gain in general).
-- `ui/theme/Theme.kt` — `SeanceColors` is a custom `CompositionLocal` mirroring the prototype's CSS custom properties 1:1 (not Material3's `ColorScheme` roles). When adding UI, pull colors from `LocalSeanceColors.current`, not `MaterialTheme.colorScheme`.
-- `ui/Formatting.kt` — display-string helpers (chip text, totals, turnaround marker text); a direct port of the prototype's `renderVals()`. Keep these in sync with `PaceMath`/`SessionCalculator` if the underlying math changes.
+## Pièges
+- `app/*` ne compile pas dans le cloud : relire les imports et signatures à la main, puis attendre la CI. Un `StepSpec` non stable côté Compose : ne pas le recréer inutilement.
+- Lire le flux DataStore en continu écraserait l'état optimiste (scintillement, étapes ressuscitées) : garder la lecture unique.
+- `Formatting` et le ViewModel n'ont pas de tests (code `app/`) ; toute logique pure doit vivre dans `domain/` pour être testée ici.
+- Maven Central renvoie parfois 429 depuis le cloud : relancer la commande.
 
-### Functional rules worth knowing before changing behavior
+## État du projet
+- Fait : édition d'étapes/modèles, calcul du demi-tour (distance ou durée), thèmes, persistance locale, variantes dev/prod, release manuelle signée, CI complète, audit sécurité/qualité/a11y (2026-11).
+- Dette connue / à arbitrer : extraire `Draft`/`validate`/`fieldOrder`/`Formatting` vers `domain` pour les tester ; annulation après suppression d'étape ; UI pour `halfBy`/`unit` ; R8 (`isMinifyEnabled`) ; montée de toolchain (voir ci-dessus) ; demi-tour pile à une frontière de segment (reste 0).
 
-- `mm.ss` format: `1.30` = 1m30s; a single digit after the separator is the *ones* digit of seconds, not tens (`2.1` = `2.01` = 2m1s). Seconds ≥ 60 is rejected. That's the **input** format only — durations and paces are *displayed* as `3m02s` / `3m02s/km` via `PaceMath.formatDuration` (and `formatMmSsField` for a raw field), which drops a zero part (`3m`, not `3m00s`; `1s`, not `0m01s`). The prototype displayed `mm.ss` everywhere; this is a deliberate divergence from it.
-- The turnaround marker on a step card also reports what is left of the **segment** the turnaround falls in — that one repetition's effort, or that one recovery phase, never the remaining repetitions of the step (`TurnPoint.restDistance` / `restTime`). The point is to be readable off a watch mid-run: 30 s into the first of 3 × 2 min, it says 1m30s, not 5m30s. Which of the two it shows follows how that segment is *set*, not the `HalfBy` setting: a recovery is always a duration, so always a time; an effort follows its step's `measure`. That also means it is always the exact figure rather than one derived from the pace — a distance-measured step has an exact distance, a duration-measured one an exact time.
-- A template requires at least one of pace or length (not both); the other can be left blank and is only applied if the template defines it (`applyTemplate` in the ViewModel copies reps/name unconditionally, pace/length/recovery only if the template set them).
-- Recovery (when enabled) applies after **every** repetition, including the last.
-- Default recovery pace is a 9.00–11.00 range, stored in `AppSettings.recovery` and used to prefill new step drafts; editable from the settings sheet.
-- Theme is `SYSTEM` / `LIGHT` / `DARK`, persisted in `AppSettings.theme`.
+## Git
+- Conventional Commits en anglais, impératif ; branche `claude/<sujet-en-kebab-case>` parlante (jamais un nom généré : renommer avant le premier push).
+- Une session ouvre au plus une PR, sauf demande contraire : un second sujet va sur la même branche et élargit le titre.
+- `CHANGELOG.md` (Keep a Changelog) mis à jour pour tout changement notable ; ce fichier mis à jour dans le même commit que ce qu'il décrit.
 
-## Package / version notes
-
-- Packages: `com.demicourse.domain`, `com.demicourse.seance`.
-- `minSdk 26`, `compileSdk`/`targetSdk 35`, Kotlin `2.0.21`, AGP `8.7.3`, Compose BOM `2024.12.01`.
-- Version catalog: `gradle/libs.versions.toml`. Each module applies its own plugins directly (no shared `apply false` block in the root `build.gradle.kts`) — this is what lets `:domain:test` configure and run without ever touching the Android Gradle Plugin classpath.
+## Règles de code
+- Clean code (nommage explicite, fonctions courtes, pas de nombre magique, pas de code mort, commentaires pour le « pourquoi »), Kotlin idiomatique, bonnes pratiques officielles. Tout nouveau code accompagné de tests (`domain`).
+- Textes d'interface en français.

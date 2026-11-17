@@ -27,22 +27,25 @@ ktlint {
 // applicationId (".dev" suffix) and its own displayed name, so it sits next to
 // the prod version on the phone instead of overwriting it.
 
-val RELEASE_VERSION_PATTERN = Regex("""^(\d{4})\.(\d{2})\.(\d{2})-(\d{1,2})$""")
+val releaseVersionPattern = Regex("""^(\d{4})\.(\d{2})\.(\d{2})-(\d{1,2})$""")
 
 /** yy mm dd nn → an increasing integer: 2026.09.18-1 becomes 26_09_18_01. */
 fun releaseVersionCodeOf(versionName: String): Int {
-    val parts = RELEASE_VERSION_PATTERN.find(versionName)
-        ?: error("Invalid release version: \"$versionName\" (expected yyyy.MM.dd-n, n ≤ 99).")
+    val parts =
+        releaseVersionPattern.find(versionName)
+            ?: error("Invalid release version: \"$versionName\" (expected yyyy.MM.dd-n, n ≤ 99).")
     val (year, month, day, seq) = parts.destructured
     return ((year.toInt() % 100) * 10_000 + month.toInt() * 100 + day.toInt()) * 100 + seq.toInt()
 }
 
 val buildTime: LocalDateTime = LocalDateTime.now()
 
-val releaseVersionName: String = (findProperty("appVersionName") as String?)?.takeIf { it.isNotBlank() }
-    ?: "${buildTime.format(DateTimeFormatter.ofPattern("yyyy.MM.dd"))}-0"
-val releaseVersionCode: Int = (findProperty("appVersionCode") as String?)?.takeIf { it.isNotBlank() }?.toInt()
-    ?: releaseVersionCodeOf(releaseVersionName)
+val releaseVersionName: String =
+    (findProperty("appVersionName") as String?)?.takeIf { it.isNotBlank() }
+        ?: "${buildTime.format(DateTimeFormatter.ofPattern("yyyy.MM.dd"))}-0"
+val releaseVersionCode: Int =
+    (findProperty("appVersionCode") as String?)?.takeIf { it.isNotBlank() }?.toInt()
+        ?: releaseVersionCodeOf(releaseVersionName)
 
 val devVersionName: String = "dev-" + buildTime.format(DateTimeFormatter.ofPattern("yyyy.MM.dd-HH.mm"))
 // Minutes since 2020: grows from one dev build to the next, and stays small
@@ -55,12 +58,16 @@ val devVersionCode: Int = Duration.between(LocalDateTime.of(2020, 1, 1, 0, 0), b
 // variables the workflow sets from the repository secrets. With neither, the
 // release APK comes out unsigned: it builds, but it will not install.
 
-val keystoreProperties = Properties().apply {
-    val file = rootProject.file("keystore.properties")
-    if (file.exists()) file.inputStream().use { load(it) }
-}
+val keystoreProperties =
+    Properties().apply {
+        val file = rootProject.file("keystore.properties")
+        if (file.exists()) file.inputStream().use { load(it) }
+    }
 
-fun signingSecret(property: String, environmentVariable: String): String? =
+fun signingSecret(
+    property: String,
+    environmentVariable: String,
+): String? =
     (keystoreProperties.getProperty(property) ?: System.getenv(environmentVariable))?.takeIf { it.isNotBlank() }
 
 val releaseStoreFile = signingSecret("storeFile", "ANDROID_KEYSTORE_FILE")

@@ -32,12 +32,13 @@ jobs:
         with:
           packages: "platform-tools platforms;android-35 build-tools;35.0.0"
       - name: ktlint
+        shell: bash # -eo pipefail: a failing Gradle must not be hidden by `tee`
         run: ./gradlew ktlintCheck 2>&1 | tee lint.log
       - name: Summary
         id: summary
         if: always()
         run: |
-          errors="$(grep -cE '\.kts?:[0-9]+:[0-9]+' lint.log || true)"
+          errors="$(grep -cE '^[^ ]+\.kts?:[0-9]+:[0-9]+ ' lint.log || true)"
           echo "summary=${errors} violation(s)" >> "$GITHUB_OUTPUT"
 
   test:
@@ -113,6 +114,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: gitleaks
+        shell: bash # -eo pipefail: a failing scan must not be hidden by `tee`
         run: |
           docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.30.1 \
             detect --source /repo --redact --verbose 2>&1 | tee gitleaks.log
